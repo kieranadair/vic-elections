@@ -10,28 +10,66 @@ def timeline(years,start,play=False,speed=1800):
  return dict(axisType='category',data=[str(y) for y in years],currentIndex=years.index(start) if start in years else 0,autoPlay=play,loop=False,playInterval=speed,bottom=8,left=45,right=45,label=dict(color='#aebbd0'),lineStyle=dict(color='#5a6c84'),controlStyle=dict(color='#d7e3f4',borderColor='#d7e3f4'))
 def common():
  return dict(backgroundColor='#111c2c',textStyle=dict(color='#d7e3f4'),animationDurationUpdate=900,animationEasingUpdate='cubicInOut')
-def ternary_options(df,years,start,play,speed):
- render=JsCode("""function(p,a){var q=a.coord([a.value(0),a.value(1)]);return {type:'circle',id:a.value(6),shape:{cx:q[0],cy:q[1],r:5},style:a.style({opacity:0.8,stroke:'#111c2c',lineWidth:1}),transition:['shape']};}""").js_code
- tip=JsCode("""function(p){var v=p.value;return v[6]+'<br>Labor '+v[2].toFixed(2)+'%<br>Coalition '+v[3].toFixed(2)+'%<br>Other '+v[4].toFixed(2)+'%<br>'+v[5];}""").js_code
- gridlines=[]
- for k in [.2,.4,.6,.8]:
-  for ends in [((k,1-k,0),(k,0,1-k)),((1-k,k,0),(0,k,1-k)),((1-k,0,k),(0,1-k,k))]:
-   gridlines.append(dict(type='line',coordinateSystem='cartesian2d',data=[list(ternary_xy(*v)) for v in ends],symbol='none',lineStyle=dict(color='#2d3a4d',width=1),silent=True,tooltip=dict(show=False),z=0))
- edge=dict(type='line',data=[[0,0],[1,0],[.5,math.sqrt(3)/2],[0,0]],symbol='none',lineStyle=dict(color='#8fa0b8',width=1),silent=True,tooltip=dict(show=False))
- base=common();base.update(timeline=timeline(years,start,play,speed),grid=dict(top=65,bottom=110,left='12%',right='12%',containLabel=False),xAxis=dict(type='value',min=-.12,max=1.12,show=False),yAxis=dict(type='value',min=-.1,max=1.0,show=False),legend=dict(data=GROUPS,top=8,textStyle=dict(color='#d7e3f4')),tooltip=dict(trigger='item',formatter=tip,confine=True),graphic=[dict(type='text',left='10%',bottom=85,style=dict(text='Labor 100%',fill='#d7e3f4')),dict(type='text',right='8%',bottom=85,style=dict(text='Coalition 100%',fill='#d7e3f4')),dict(type='text',left='center',top=46,style=dict(text='Other 100%',fill='#d7e3f4'))])
- opts=[]
- for year in years:
-  sub=df[df.election_year==year];series=gridlines+[edge]
-  for g in GROUPS:
-   data=[]
-   for _,r in sub.iterrows():
-    vals=[float(r[x+'_pct']) for x in ['labor','coalition','other']]
-    if GROUPS[max(range(3),key=lambda j:vals[j])]!=g:continue
-    x,y=ternary_xy(*vals);quality='Source totals differ; shares normalised to candidate sum' if 'reconciles' in r and not r.reconciles else 'Shares sum to 100%'
-    data.append(dict(id=r.electorate,name=r.electorate,value=[x,y,*vals,quality,r.electorate]))
-   series.append(dict(type='custom',name=g,renderItem=render,data=data,itemStyle=dict(color=COLORS[g]),encode=dict(x=0,y=1),universalTransition=True,z=3))
-  opts.append(dict(title=dict(text=str(year),left=20,top=40,textStyle=dict(color='#d7e3f4',fontSize=22)),series=series))
- return dict(baseOption=base,options=opts)
+# Shared pixel transform keeps x/y scales identical at every component size.
+TERNARY_GEOMETRY_JS = """
+var height = Math.sqrt(3) / 2;
+var side = Math.min(api.getWidth() - 70, (api.getHeight() - 120) / height);
+var left = (api.getWidth() - side) / 2;
+var top = 72;
+var bottom = top + side * height;
+function point(x, y) { return [left + side * x, bottom - side * y]; }
+"""
+
+def ternary_options(df, year):
+ """One static, equilateral first-preference triangle for a single election."""
+ background = JsCode("""function(params, api) {
+ GEOMETRY
+ var h = Math.sqrt(3) / 2;
+ var L = point(0, 0), C = point(1, 0), O = point(.5, h);
+ var LC = point(.5, 0), LO = point(.25, h/2), CO = point(.75, h/2);
+ var centre = point(.5, h/3);
+ function region(points, color, x, y, x2, y2) {
+  return {type:'polygon',shape:{points:points},style:{fill:{
+   type:'linear',x:x,y:y,x2:x2,y2:y2,
+   colorStops:[{offset:0,color:color},{offset:1,color:'#fafafa'}],global:false
+  }}};
+ }
+ function line(a,b) { return {type:'line',shape:{x1:a[0],y1:a[1],x2:b[0],y2:b[1]},style:{stroke:'#c7cbd0',lineWidth:.8}}; }
+ function text(x,y,label,color,align) { return {type:'text',style:{x:x,y:y,text:label,fill:color,font:'12px sans-serif',align:align,verticalAlign:'middle'}}; }
+ return {type:'group',children:[
+  region([L, LC, centre, LO], '#ef8d9c', 0,1,1,0),
+  region([C, CO, centre, LC], '#80a8de', 1,1,0,0),
+  region([O, LO, centre, CO], '#a9a9a9', .5,0,.5,1),
+  {type:'polygon',shape:{points:[L,C,O]},style:{fill:'none',stroke:'#d9dce0',lineWidth:.8}},
+  line(LC,centre),line(LO,centre),line(CO,centre),
+  text(O[0],O[1]-23,'100% Other','#51565e','center'),
+  text(L[0],L[1]+22,'100% Labor','#bd344e','left'),
+  text(C[0],C[1]+22,'100% Coalition','#2b68af','right')
+ ]};
+}""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
+ render = JsCode("""function(params, api) {
+ GEOMETRY
+ var p = point(api.value(0), api.value(1));
+ var group = api.value(7), r = 3.4;
+ var style = api.style({opacity:.78});
+ if (group === 'Coalition') return {type:'rect',shape:{x:p[0]-r,y:p[1]-r,width:2*r,height:2*r},style:style};
+ if (group === 'Other') return {type:'polygon',shape:{points:[[p[0],p[1]-r-1],[p[0]+r+1,p[1]],[p[0],p[1]+r+1],[p[0]-r-1,p[1]]]},style:style};
+ return {type:'circle',shape:{cx:p[0],cy:p[1],r:r},style:style};
+}""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
+ tip=JsCode("""function(p){var v=p.value;return v[6]+'<br>Labor '+v[2].toFixed(2)+'%<br>Coalition '+v[3].toFixed(2)+'%<br>Other '+v[4].toFixed(2)+'%'+(v[5]?'<br>'+v[5]:'');}""").js_code
+ series=[dict(type='custom',name='Dominance regions',coordinateSystem='none',renderItem=background,data=[0],silent=True,z=0,tooltip=dict(show=False))]
+ sub=df[df.election_year==year]
+ for g in GROUPS:
+  data=[]
+  for _,r in sub.iterrows():
+   vals=[float(r[x+'_pct']) for x in ['labor','coalition','other']]
+   if GROUPS[max(range(3),key=lambda j:vals[j])]!=g:continue
+   x,y=ternary_xy(*vals)
+   quality='Source totals differ; shares normalised to candidate sum' if not bool(r.get('reconciles',True)) else ''
+   data.append(dict(name=r.electorate,value=[x,y,*vals,quality,r.electorate,g]))
+  series.append(dict(type='custom',name=g,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color={'Labor':'#df526b','Coalition':'#397fc6','Other':'#858585'}[g]),z=3))
+ return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left=16,top=16,textStyle=dict(color='#252b33',fontSize=22,fontWeight=500)),tooltip=dict(trigger='item',formatter=tip,confine=True),series=series)
+
 def windsock_rows(final,centres,focus,basis,half=False):
  d=final.merge(centres,on='electorate',how='inner',validate='many_to_one');tag='tpp' if basis=='Labor–Coalition 2PP' else 'tcp';g=focus.lower()
  d=d[d[tag+'_status']=='Published'].copy()
