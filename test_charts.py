@@ -21,17 +21,17 @@ class ChartChecks(unittest.TestCase):
   options=ternary_options(pd.read_csv(D/'first_preferences.csv'),2022)
   callback=options['series'][0]['renderItem'].replace('--x_x--0_0--','')
   script='const render=('+callback+');'+"""
-  for (const width of [320,420,520,680]) {
-   const scene=render({}, {getWidth:()=>width,getHeight:()=>460});
+  for (const width of [245,280,320,520]) {
+   const scene=render({}, {getWidth:()=>width,getHeight:()=>320});
    const points=scene.children[3].shape.points;
    const sides=points.map((p,i)=>Math.hypot(p[0]-points[(i+1)%3][0],p[1]-points[(i+1)%3][1]));
    if(Math.max(...sides)-Math.min(...sides)>1e-8)throw Error('Triangle stretched at '+width);
-   if(points.some(p=>p[0]<0||p[0]>width||p[1]<0||p[1]>460))throw Error('Triangle clipped');
+   if(points.some(p=>p[0]<0||p[0]>width||p[1]<0||p[1]>320))throw Error('Triangle clipped');
   }
   """
   subprocess.run(['node','-e',script],check=True,capture_output=True,text=True)
  def test_colour_uses_elected_party_not_primary_leader(self):
-  from charts import PARTY_COLORS
+  from charts import WINNER_COLORS
   d=pd.read_csv(D/'first_preferences.csv')
   # Labor beat the Greens after preferences despite Other leading primary votes.
   northcote=d.query('election_year==2022 and electorate=="Northcote"').iloc[0]
@@ -41,9 +41,18 @@ class ChartChecks(unittest.TestCase):
   self.assertIn('Northcote',[p['name'] for p in labor['data']])
   # The 2014 Prahran winner was Greens, although Coalition led on primaries.
   options=ternary_options(d,2014)
-  greens=next(s for s in options['series'] if s['name']=='Greens')
+  greens=next(s for s in options['series'] if s['name']=='Other')
   self.assertIn('Prahran',[p['name'] for p in greens['data']])
-  self.assertEqual(greens['itemStyle']['color'],PARTY_COLORS['Greens'])
+  self.assertEqual(greens['itemStyle']['color'],WINNER_COLORS['Other'])
+ def test_three_winner_groups_cover_every_seat(self):
+  from charts import WINNER_COLORS
+  d=pd.read_csv(D/'first_preferences.csv')
+  self.assertEqual(list(WINNER_COLORS),['Labor','Liberal–National','Other'])
+  for year in d.election_year.unique():
+   series=ternary_options(d,year)['series'][1:]
+   self.assertEqual(sum(len(s['data']) for s in series),len(d[d.election_year==year]))
+  counts={s['name']:len(s['data']) for s in ternary_options(d,2022)['series'][1:]}
+  self.assertEqual(counts,{'Labor':56,'Liberal–National':28,'Other':4})
  def test_hover_guides_and_axis_ticks(self):
   import subprocess,shutil,json
   if not shutil.which('node'):self.skipTest('Node is needed to execute the chart renderer')
@@ -54,8 +63,8 @@ class ChartChecks(unittest.TestCase):
   background=options['series'][0]['renderItem'].replace('--x_x--0_0--','')
   script='const render=('+render+');const background=('+background+');const value='+json.dumps(value)+';'+"""
   function check(x,msg){if(!x)throw Error(msg);}
-  for(const width of [320,520]) {
-   const api={getWidth:()=>width,getHeight:()=>460,value:i=>value[i],visual:()=> '#d34a59'};
+  for(const width of [245,280,320]) {
+   const api={getWidth:()=>width,getHeight:()=>320,value:i=>value[i],visual:()=> '#d34a59'};
    const scene=render({},api), bg=background({},api);
    check(bg.children.filter(x=>x.name==='axis-tick').length===12,'Four ticks on every edge');
    const marks=scene.children.filter(x=>x.type==='circle');

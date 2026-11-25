@@ -13,17 +13,15 @@ def common():
 # Shared pixel transform keeps x/y scales identical at every component size.
 TERNARY_GEOMETRY_JS = """
 var height = Math.sqrt(3) / 2;
-var side = Math.min(api.getWidth() - 70, (api.getHeight() - 120) / height);
+var side = Math.min(api.getWidth() - 48, (api.getHeight() - 104) / height);
 var left = (api.getWidth() - side) / 2;
-var top = 72;
+var top = 54;
 var bottom = top + side * height;
 function point(x, y) { return [left + side * x, bottom - side * y]; }
 """
 
-PARTY_COLORS = {
- 'Labor': '#d34a59', 'Liberal': '#367ac3', 'National': '#246344',
- 'Greens': '#62a844', 'Independent': '#777777',
-}
+WINNER_COLORS = {'Labor': '#cc4359', 'Liberal–National': '#377db8', 'Other': '#50555a'}
+
 
 def ternary_options(df, year):
  """First-preference positions, coloured by the elected party after preferences."""
@@ -42,9 +40,9 @@ def ternary_options(df, year):
  function line(a,b,color,width) { return {type:'line',shape:{x1:a[0],y1:a[1],x2:b[0],y2:b[1]},style:{stroke:color||'#c7cbd0',lineWidth:width||.8}}; }
  function text(x,y,label,color,align) { return {type:'text',style:{x:x,y:y,text:label,fill:color,font:'12px sans-serif',align:align,verticalAlign:'middle'}}; }
  var children = [
-  region([L, LC, centre, LO], '#ef8d9c', 0,1,1,0),
-  region([C, CO, centre, LC], '#80a8de', 1,1,0,0),
-  region([O, LO, centre, CO], '#a9a9a9', .5,0,.5,1),
+  region([L, LC, centre, LO], '#efb0ba', 0,1,1,0),
+  region([C, CO, centre, LC], '#a9c4e7', 1,1,0,0),
+  region([O, LO, centre, CO], '#c2c5c9', .5,0,.5,1),
   {type:'polygon',name:'triangle-outline',shape:{points:[L,C,O]},style:{fill:'none',stroke:'#bec3ca',lineWidth:.8}}
  ];
  [.2,.4,.6,.8].forEach(function(v) {
@@ -59,13 +57,13 @@ def ternary_options(df, year):
  });
  children.push(line(LC,centre),line(LO,centre),line(CO,centre),
   text(O[0],O[1]-23,'100% Other','#51565e','center'),
-  text(L[0],L[1]+35,'100% Labor','#bd344e','left'),
-  text(C[0],C[1]+35,'100% Coalition','#2b68af','right'));
+  text(L[0],L[1]+28,'100% Labor','#bd344e','left'),
+  text(C[0],C[1]+28,'100% Coalition','#2b68af','right'));
  return {type:'group',children:children};
 }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
  render = JsCode("""function(params, api) {
  GEOMETRY
- var p=point(api.value(0),api.value(1)),r=3.8;
+ var p=point(api.value(0),api.value(1)),r=2.8;
  var labor=api.value(2)/100,coalition=api.value(3)/100,other=api.value(4)/100;
  var ends=[point(1-labor,0),point((1+coalition)/2,height*(1-coalition)),point(other/2,height*other)];
  var color=api.visual('color');
@@ -96,15 +94,15 @@ def ternary_options(df, year):
 }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
  series=[dict(type='custom',name='Dominance regions',coordinateSystem='none',renderItem=background,data=[0],silent=True,z=0,tooltip=dict(show=False))]
  sub=df[df.election_year==year]
- for party,color in PARTY_COLORS.items():
+ for group,color in WINNER_COLORS.items():
   data=[]
-  for _,r in sub[sub.winner_party==party].iterrows():
+  for _,r in sub[sub.winner_group=={'Labor':'Labor','Liberal–National':'Coalition','Other':'Other'}[group]].iterrows():
    vals=[float(r[x+'_pct']) for x in ['labor','coalition','other']]
    x,y=ternary_xy(*vals)
    quality='Source totals differ; shares normalised to candidate sum' if not bool(r.get('reconciles',True)) else ''
-   data.append(dict(name=r.electorate,value=[x,y,*vals,quality,r.electorate,party,r.winner]))
-  series.append(dict(type='custom',name=party,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color=color),emphasis=dict(focus='none'),z=3))
- return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left=16,top=16,textStyle=dict(color='#252b33',fontSize=22,fontWeight=500)),tooltip=dict(show=False),series=series)
+   data.append(dict(name=r.electorate,value=[x,y,*vals,quality,r.electorate,r.winner_party,r.winner]))
+  series.append(dict(type='custom',name=group,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color=color),emphasis=dict(focus='none'),z=3))
+ return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left=8,top=6,textStyle=dict(color='#252b33',fontSize=19,fontWeight=500)),tooltip=dict(show=False),series=series)
 
 def windsock_rows(final,centres,focus,basis,half=False):
  d=final.merge(centres,on='electorate',how='inner',validate='many_to_one');tag='tpp' if basis=='Labor–Coalition 2PP' else 'tcp';g=focus.lower()

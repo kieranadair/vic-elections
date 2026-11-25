@@ -1,6 +1,8 @@
-# Victoria · Electoral currents
+# Victoria’s changing vote
 
-Streamlit + Apache ECharts exploration of Victorian Legislative Assembly elections, 1982–2022.
+A Streamlit + Apache ECharts gallery of Victorian Legislative Assembly first preferences, 1982–2022.
+
+![Four elections per row](screenshots/gallery-1440.png)
 
 ## Run
 
@@ -12,57 +14,62 @@ python -m pip install -r requirements.txt
 python -m streamlit run app.py
 ```
 
-The ternary view shows all 12 elections as static small multiples in a responsive `st.grid`, two charts across on a laptop. Every chart has the same pixel scale on both axes, with an equilateral triangle and shaded regions for the largest first-preference bloc. There is no ternary timeline, animation, or three-candidate view. The windsock map retains its own year and playback controls; the table year is selected independently.
+To install the official, version-matched Streamlit agent skill in your checkout:
 
-![Ternary charts on a laptop](screenshots/ternary-grid-laptop.png)
+```sh
+python -m streamlit skills --yes
+```
 
-![Winner colours and reference lines on hover](screenshots/ternary-hover-northcote-2022.png)
+The skill is installed in this working checkout. Its environment-specific symlink is intentionally ignored by Git. [Streamlit skill documentation](https://docs.streamlit.io/develop/api-reference/cli/skills).
 
-## Views
+## Reading the gallery
 
-- **Ternary:** first-preference shares, aggregated to Labor / Liberal and National Coalition / Other. All seats are circles at 80% opacity, coloured by the elected party after preferences: Labor, Liberal, National, Greens or Independent. Position always represents first preferences, so a circle can lie in another bloc's region. Four unlabelled ticks on each edge mark 20, 40, 60 and 80%, with light grey grid rules. Hover shows the seat name above the circle and three reference lines, with the corresponding first-preference percentage at each edge. Pale gradient regions divide the triangle at equal-share boundaries. Page and tile widths are bounded for laptop use; narrower layouts wrap the grid.
-- **Windsock:** choose Labor–Coalition 2PP or actual final-two 2CP, focus group, margin definition, map zoom and length scale. 45 degrees up-right means focus wins; 135 degrees up-left means opposition wins. Length defaults to the vote-share lead (focus minus opponent); the optional swing-to-tie measure is half the lead. Zero is a tie and has zero length.
-- **Data:** inspect source links, coverage and CSV exports.
+- One circle per seat, positioned by **first-preference shares** for Labor, Liberal/National Coalition and Other.
+- Colour represents the **winning group after preferences**: Labor (red), Liberal–National (blue), Other (dark grey). Greens and independent winners are included in Other.
+- All circles use 80% opacity. Hover for the seat name and three reference lines, with vote shares at the edges.
+- Light grey rules and four unlabelled ticks per edge mark 20, 40, 60 and 80%. The triangle is equilateral at every component width.
+- Four charts per row on a laptop, in three chronological groups of four elections. Narrower screens wrap the grid. The entire app uses a white theme.
 
-## Geography
+The page contains only the gallery, researched explanations and a compact reading/data popover. The windsock map, data/methods tabs and three-candidate controls have been removed from the app. Earlier research files and chart helpers remain in the repository as working material.
 
-The app deliberately uses **fixed 2022 boundaries and geometric centroids in every election**, as requested. Historical seats match by name only. An abolished/renamed seat absent from the 2022 map is omitted; a new 2022 seat appears when its name first occurs. No historical boundary reconstruction or successor-seat matching is implied. Centroids use longitude/latitude polygon geometry; they are not population centres and can lie outside irregular polygons. Zoom into Melbourne to inspect crowded seats. Geometric shapes are simplified for display.
+## Historical explanations
 
-Files: https://github.com/jwood74/geographic_boundaries/tree/main/au/sed/sed_vic
-The original 2021 redistribution geometry is the boundary set used in 2022; upstream links identify the Electoral Boundaries Commission as the source. Attribution remains with the original data owners. The 2014 boundary file is retained as source material but is not used by the app.
+Each group of four elections includes a short explanation that connects a pattern visible in the charts to historical context:
+
+1. **1982–1992:** Labor’s three wins followed by the shift to Kennett. The near-flat 1985 distribution also reflects the Democrats not fielding Assembly candidates.
+2. **1996–2006:** Bracks’ return, large Labor majorities and the growth of minor-party support.
+3. **2010–2022:** A broader Other vote, Labor’s 2018 surge, and the distinction between first choices and final winners.
+
+Text and source links live in `data/election_context.json`. Sources include the Victorian Parliament’s *Visualising Victoria’s electoral history*, its 2022 election report, the Australian Election Archive, and the VEC. The two parliamentary PDFs are retained under `research/context/`. The 2010/2022 median-seat figures are computed from the included first-preference dataset, not interpreted as statewide vote shares.
 
 ## Data and limits
 
-- 1,049 seat-election rows, 12 elections, 1982–2022.
-- First preferences: historical Wikipedia tables, citing electoral reports; official VEC 2022 distributions supersede all 2022 primary figures. Exact sources are recorded on rows.
-- **19 historical primary tables fail candidate-sum versus published-formal-total reconciliation.** Their shares use the candidate sum and are flagged by an asterisk on the hovered seat name and in exports. Include/exclude them with the sidebar checkbox. This retains provisional historical coverage without representing those raw counts as verified.
-- Research files retain 2022 intermediate preference rounds, but these are not used or selectable in the app's ternary charts. Voter intent is measured using first preferences only.
-- The actual last three candidates can include two candidates from the same bloc. This is not a synthetic three-bloc recount; such a recount cannot generally be inferred from aggregate exclusion-round totals.
-- 2PP = Labor versus Coalition. 2CP = the actual final pair. Actual 2022 final-two figures are official full-distribution totals. Other historical final figures and alternate 2022 2PP are secondary-source published counts and are not all independently verified against original reports.
-- Missing published 2PP in the compiled tables: Preston 1982, Mildura 1988, Richmond 2018, Narracan 2022. Missing values stay missing. Narracan had no Labor candidate in its January 2023 supplementary election.
-- A focus group absent from the actual final pair has no final 2CP margin; the app omits its windsock rather than assigning a fictional margin.
-- No 2026 result is included; the general election had not occurred at compilation (25 November 2026).
+The gallery contains 1,049 seat-election rows across 12 elections. Historical primary figures come from electorate result tables citing election reports. Official VEC 2022 preference distributions supply the 2022 first-preference figures. Exact source URLs and winning party/candidate fields are retained in `data/first_preferences.csv`.
 
-Official results: https://www.vec.vic.gov.au/results/state-election-results
+**19 historical tables fail candidate-sum versus published-formal-total reconciliation.** Their shares use the candidate sum. An asterisk on the hovered name flags these seats; the reading popover can exclude them. Historical coverage remains provisional rather than representing every raw count as independently verified.
 
-Full distributions: https://www.vec.vic.gov.au/results/electoral-statistics/state-election-statistics/full-preference-distributions
+Other includes Greens, minor parties and independents with differing politics. Seat boundaries and ballot choices change over time, so these are not the same voters tracked across elections. 2022 includes Narracan’s January 2023 supplementary election. There are no 2026 results: the election had not occurred at compilation on 25 November 2026.
 
-## Tables and reproducibility
-
-`victoria_chart_inputs.xlsx` and `data/chart_inputs.csv` combine first preferences, last-three totals where available, final counts, map centroids and source links. Individual data files are also supplied. Unavailable fields are blank, never filled with first preferences or estimated transfers.
-
-`prepare_data.py` is an optional source-rebuild helper. It uses the included `research/` source directory and additionally requires the packages in `requirements-dev.txt`. App runtime does not need these or an external service.
+Additional workbooks, final 2PP/2CP counts, intermediate 2022 rounds and map files from earlier work remain available in `data/` and `research/`. They are not loaded or displayed by this app.
 
 ## Live deployments
 
-The app loads the current `charts.py` source into an isolated module on each run. This avoids stale helper functions and constants surviving a Community Cloud code update, without reloading a module shared by other sessions. Data-cache keys include CSV/GeoJSON file versions so new winner fields and corrected values are read after deployment.
+The app executes the current `charts.py` source in an isolated module on each run. This avoids stale helper functions surviving a Community Cloud code update. CSV and context-file versions are included in the data-cache key, so corrected values and changed explanations refresh after deployment.
 
-## Validation
+## Checks
 
 ```sh
+python -m pip install -r requirements-dev.txt
 python -m unittest discover -p 'test_*.py'
+python -m ty check app.py charts.py
 ```
 
-Live-update regression tests preload an obsolete chart module and update chart source plus CSV data within an existing session. Checks also cover ternary vertices and sums, elected-party colouring where the primary leader differs, 80% circle opacity, four ticks per edge, exact edge-projection values, final margins, absent focus groups, and conservation through all 88 2022 distributions. Streamlit AppTest checks page execution and switching chart tabs and focus groups. ECharts JavaScript callbacks were syntax-checked with Node. The revised grid was run internally in Chromium at 1440px and 1366px laptop widths. All 12 static charts render without browser errors. Triangle side equality is also checked by executing the actual renderer at widths from 320px to 680px. The app was run internally in Chromium. Ternary and windsock rendering, switching chart tabs, Melbourne zoom, and selecting 1982 were checked with screenshots. A hidden-tab chart initialisation bug was fixed. Screenshots are included in `screenshots/`; continuous playback has not been separately timed.
+Tests cover vote sums, winner grouping, equal triangle sides, 80% circle opacity, ticks and hover projections, plus stale-module and data-cache updates. Visual checks at 1440px and 1366px confirm four charts per row, a white background and no browser errors. A phone-width check verifies wrapping. The Streamlit agent API is enabled only on the internal QA server, never in deployment configuration.
 
-Deploy on a Python-capable service (for example Streamlit Community Cloud), with `app.py` as the entry point. This is a runnable source delivery, not a hosted deployment; static/Cloudflare Worker hosting does not run a Streamlit Python server.
+To repeat the screenshot checks against a running app:
+
+```sh
+python capture.py --url http://127.0.0.1:8501
+```
+
+Deploy on Streamlit Community Cloud with `app.py` as the entry point. The app has no external API or database dependency.

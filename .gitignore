@@ -7,3 +7,6 @@ venv/
 .env
 .env.*
 .DS_Store
+
+# Installed Streamlit skill points to this machine’s Python environment.
+.agents/skills/developing-with-streamlit

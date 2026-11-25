@@ -1,0 +1,29 @@
+[
+  {
+    "years": [1982, 1985, 1988, 1992],
+    "title": "From Cain to Kennett",
+    "text": "Most seats sit near the Labor–Liberal/National base in the 1980s. The almost flat 1985 plot also reflects ballot choice: the Democrats did not field Assembly candidates. Cain’s Labor won in 1982, 1985 and 1988, before a clear shift toward the Coalition in 1992. After recession and financial crises, Kennett’s Coalition took 61 of 88 seats. The low Other share should be read alongside who actually stood for election.",
+    "sources": [
+      {"label": "Victorian Parliament: electoral history", "url": "https://www.parliament.vic.gov.au/about/publications/research-papers/visualising-victorias-electoral-history/"},
+      {"label": "Australian Election Archive: Democrats’ absence in 1985", "url": "https://australianelectionarchive.com/elecdetail.php?HoRID=0483&summary=true"},
+      {"label": "Australian Election Archive: 1992 background", "url": "https://australianelectionarchive.com/elecdetail.php?HoRID=0484&summary=true"}
+    ]
+  },
+  {
+    "years": [1996, 1999, 2002, 2006],
+    "title": "Labor returns as Other grows",
+    "text": "By 2002 and 2006, more seats spread upward as minor-party support grows, while many also move toward Labor. Bracks formed a minority government in 1999 with three independents’ support. In 2002, Labor won 62 seats and the Greens drew 9.7% of the Assembly vote without winning a seat. Labor’s primary vote eased in 2006, but it retained 55 seats. Growing support for Other coexisted with large Labor majorities.",
+    "sources": [
+      {"label": "Victorian Parliament: electoral history, pp. 14–15", "url": "https://www.parliament.vic.gov.au/4adf09/globalassets/images/news/library-papers/2022_12_visualising_victorias_electoral_history_rn_.pdf#page=14"}
+    ]
+  },
+  {
+    "years": [2010, 2014, 2018, 2022],
+    "title": "A broader vote beyond the major parties",
+    "text": "The upward spread is much broader by 2022: the median seat’s Other share rises from 17.0% in 2010 to 26.5% in 2022 in this dataset. Labor’s 2018 surge is followed by movement toward Other in 2022, yet Labor won 56 seats and the Greens four. First choices and final winners tell different stories. Other combines parties and independents with different politics; it is not a single political bloc.",
+    "sources": [
+      {"label": "Victorian Parliament: 2022 election review", "url": "https://www.parliament.vic.gov.au/49950e/globalassets/sections-shared/about/publications/research-papers/the2022victorianstateelection_rp_2023_2.pdf"},
+      {"label": "VEC: 2022 results", "url": "https://www.vec.vic.gov.au/results/state-election-results/2022-state-election-results"}
+    ]
+  }
+]

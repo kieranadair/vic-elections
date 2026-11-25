@@ -1,8 +1,22 @@
 [theme]
-base = "dark"
-primaryColor = "#7eb3ee"
-backgroundColor = "#0b1422"
-secondaryBackgroundColor = "#111c2c"
-textColor = "#d7e3f4"
+base = "light"
+primaryColor = "#263746"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F6F7F8"
+textColor = "#26313B"
+linkColor = "#42657F"
+borderColor = "#E4E8EB"
+font = "sans-serif"
+baseFontSize = 15
+headingFontSizes = ["40px", "28px", "21px", "18px", "16px", "14px"]
+headingFontWeights = [600, 500, 500, 500, 500, 500]
+paddingTop = "1.25rem"
+paddingBottom = "2rem"
+baseRadius = "6px"
+showWidgetBorder = true
+
 [server]
 headless = true
+
+[browser]
+gatherUsageStats = false

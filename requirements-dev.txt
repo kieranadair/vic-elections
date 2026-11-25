@@ -3,3 +3,4 @@ lxml>=5
 shapely>=2
 openpyxl>=3
 playwright>=1.50
+ty
