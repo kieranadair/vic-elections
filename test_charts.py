@@ -30,6 +30,55 @@ class ChartChecks(unittest.TestCase):
   }
   """
   subprocess.run(['node','-e',script],check=True,capture_output=True,text=True)
+ def test_colour_uses_elected_party_not_primary_leader(self):
+  from charts import PARTY_COLORS
+  d=pd.read_csv(D/'first_preferences.csv')
+  # Labor beat the Greens after preferences despite Other leading primary votes.
+  northcote=d.query('election_year==2022 and electorate=="Northcote"').iloc[0]
+  self.assertGreater(northcote.other_pct,northcote.labor_pct)
+  options=ternary_options(d,2022)
+  labor=next(s for s in options['series'] if s['name']=='Labor')
+  self.assertIn('Northcote',[p['name'] for p in labor['data']])
+  # The 2014 Prahran winner was Greens, although Coalition led on primaries.
+  options=ternary_options(d,2014)
+  greens=next(s for s in options['series'] if s['name']=='Greens')
+  self.assertIn('Prahran',[p['name'] for p in greens['data']])
+  self.assertEqual(greens['itemStyle']['color'],PARTY_COLORS['Greens'])
+ def test_hover_guides_and_axis_ticks(self):
+  import subprocess,shutil,json
+  if not shutil.which('node'):self.skipTest('Node is needed to execute the chart renderer')
+  options=ternary_options(pd.read_csv(D/'first_preferences.csv'),2022)
+  series=next(s for s in options['series'] if s['name']=='Labor')
+  value=next(p['value'] for p in series['data'] if p['name']=='Northcote')
+  render=series['renderItem'].replace('--x_x--0_0--','')
+  background=options['series'][0]['renderItem'].replace('--x_x--0_0--','')
+  script='const render=('+render+');const background=('+background+');const value='+json.dumps(value)+';'+"""
+  function check(x,msg){if(!x)throw Error(msg);}
+  for(const width of [320,520]) {
+   const api={getWidth:()=>width,getHeight:()=>460,value:i=>value[i],visual:()=> '#d34a59'};
+   const scene=render({},api), bg=background({},api);
+   check(bg.children.filter(x=>x.name==='axis-tick').length===12,'Four ticks on every edge');
+   const marks=scene.children.filter(x=>x.type==='circle');
+   check(marks.length===1&&marks[0].style.opacity===.8,'One 80% opaque circle');
+   const outline=bg.children.find(x=>x.name==='triangle-outline').shape.points;
+   const L=outline[0],C=outline[1],O=outline[2],side=C[0]-L[0],height=L[1]-O[1];
+   const refs=['labor','coalition','other'].map(axis=>scene.children.find(x=>x.name===axis+'-reference'));
+   check(refs.every(x=>x.style.opacity===0&&x.emphasis.style.opacity===1),'Hover only references');
+   const a=refs[0].shape,b=refs[1].shape,c=refs[2].shape;
+   check(Math.abs(a.y2-L[1])<1e-8&&Math.abs(100*(1-(a.x2-L[0])/side)-value[2])<1e-8,'Labor projection');
+   check(Math.abs((b.y2-L[1])+2*height*(1-(b.x2-L[0])/side))<1e-8,'Coalition on right edge');
+   check(Math.abs(100*(2*(b.x2-L[0])/side-1)-value[3])<1e-8,'Coalition projection');
+   check(Math.abs((c.x2-L[0])*2/side-(L[1]-c.y2)/height)<1e-8,'Other on left edge');
+   check(Math.abs(100*(L[1]-c.y2)/height-value[4])<1e-8,'Other projection');
+   const name=scene.children.find(x=>x.name==='seat-name');
+   check(name.style.text==='Northcote'&&name.style.y<marks[0].shape.cy,'Seat name above circle');
+   for(const [i,axis] of ['labor','coalition','other'].entries()){
+    const label=scene.children.find(x=>x.name===axis+'-result');
+    check(label.style.text.includes(value[i+2].toFixed(1)+'%'),'Share at reference end');
+   }
+  }
+  """
+  subprocess.run(['node','-e',script],check=True,capture_output=True,text=True)
  def test_margins_and_absent_focus(self):
   f=pd.read_csv(D/'final_counts.csv');c=pd.read_csv(D/'centroids.csv').query('boundary_year==2022').drop(columns='boundary_year')
   d=windsock_rows(f,c,'Labor','Labor–Coalition 2PP');r=d.query('election_year==2022 and electorate=="Albert Park"').iloc[0]

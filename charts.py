@@ -20,8 +20,13 @@ var bottom = top + side * height;
 function point(x, y) { return [left + side * x, bottom - side * y]; }
 """
 
+PARTY_COLORS = {
+ 'Labor': '#d34a59', 'Liberal': '#367ac3', 'National': '#246344',
+ 'Greens': '#62a844', 'Independent': '#777777',
+}
+
 def ternary_options(df, year):
- """One static, equilateral first-preference triangle for a single election."""
+ """First-preference positions, coloured by the elected party after preferences."""
  background = JsCode("""function(params, api) {
  GEOMETRY
  var h = Math.sqrt(3) / 2;
@@ -34,41 +39,72 @@ def ternary_options(df, year):
    colorStops:[{offset:0,color:color},{offset:1,color:'#fafafa'}],global:false
   }}};
  }
- function line(a,b) { return {type:'line',shape:{x1:a[0],y1:a[1],x2:b[0],y2:b[1]},style:{stroke:'#c7cbd0',lineWidth:.8}}; }
+ function line(a,b,color,width) { return {type:'line',shape:{x1:a[0],y1:a[1],x2:b[0],y2:b[1]},style:{stroke:color||'#c7cbd0',lineWidth:width||.8}}; }
  function text(x,y,label,color,align) { return {type:'text',style:{x:x,y:y,text:label,fill:color,font:'12px sans-serif',align:align,verticalAlign:'middle'}}; }
- return {type:'group',children:[
+ var children = [
   region([L, LC, centre, LO], '#ef8d9c', 0,1,1,0),
   region([C, CO, centre, LC], '#80a8de', 1,1,0,0),
   region([O, LO, centre, CO], '#a9a9a9', .5,0,.5,1),
-  {type:'polygon',shape:{points:[L,C,O]},style:{fill:'none',stroke:'#d9dce0',lineWidth:.8}},
-  line(LC,centre),line(LO,centre),line(CO,centre),
+  {type:'polygon',name:'triangle-outline',shape:{points:[L,C,O]},style:{fill:'none',stroke:'#bec3ca',lineWidth:.8}}
+ ];
+ [.2,.4,.6,.8].forEach(function(v) {
+  children.push(line(point(1-v,0),point((1-v)/2,h*(1-v)),'#cbd0d6',.6));
+  children.push(line(point(v,0),point((1+v)/2,h*(1-v)),'#cbd0d6',.6));
+  children.push(line(point(v/2,h*v),point(1-v/2,h*v),'#cbd0d6',.6));
+  var labor=point(1-v,0),coalition=point((1+v)/2,h*(1-v)),other=point(v/2,h*v);
+  [[labor,[0,4]],[coalition,[3.46,-2]],[other,[-3.46,-2]]].forEach(function(tick) {
+   var a=tick[0],offset=tick[1],mark=line(a,[a[0]+offset[0],a[1]+offset[1]],'#8c949f',.8);
+   mark.name='axis-tick';children.push(mark);
+  });
+ });
+ children.push(line(LC,centre),line(LO,centre),line(CO,centre),
   text(O[0],O[1]-23,'100% Other','#51565e','center'),
-  text(L[0],L[1]+22,'100% Labor','#bd344e','left'),
-  text(C[0],C[1]+22,'100% Coalition','#2b68af','right')
- ]};
+  text(L[0],L[1]+35,'100% Labor','#bd344e','left'),
+  text(C[0],C[1]+35,'100% Coalition','#2b68af','right'));
+ return {type:'group',children:children};
 }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
  render = JsCode("""function(params, api) {
  GEOMETRY
- var p = point(api.value(0), api.value(1));
- var group = api.value(7), r = 3.4;
- var style = api.style({opacity:.78});
- if (group === 'Coalition') return {type:'rect',shape:{x:p[0]-r,y:p[1]-r,width:2*r,height:2*r},style:style};
- if (group === 'Other') return {type:'polygon',shape:{points:[[p[0],p[1]-r-1],[p[0]+r+1,p[1]],[p[0],p[1]+r+1],[p[0]-r-1,p[1]]]},style:style};
- return {type:'circle',shape:{cx:p[0],cy:p[1],r:r},style:style};
+ var p=point(api.value(0),api.value(1)),r=3.8;
+ var labor=api.value(2)/100,coalition=api.value(3)/100,other=api.value(4)/100;
+ var ends=[point(1-labor,0),point((1+coalition)/2,height*(1-coalition)),point(other/2,height*other)];
+ var color=api.visual('color');
+ function guide(end,axis) {
+  return {type:'line',name:axis+'-reference',silent:true,
+   shape:{x1:p[0],y1:p[1],x2:end[0],y2:end[1]},
+   style:{stroke:'#626c79',lineWidth:1,opacity:0},emphasis:{style:{opacity:1}},z2:20};
+ }
+ function label(x,y,txt,align,name) {
+  return {type:'text',name:name,silent:true,
+   style:{x:x,y:y,text:txt,fill:'#303b49',font:'11px sans-serif',align:align,verticalAlign:'middle',
+    backgroundColor:'rgba(255,255,255,.95)',padding:[2,3],borderRadius:2,opacity:0},
+   emphasis:{style:{opacity:1}},z2:30};
+ }
+ var right=ends[1],leftEnd=ends[2];
+ var labels=[
+  label(Math.max(62,Math.min(api.getWidth()-62,ends[0][0])),bottom+16,'Labor '+api.value(2).toFixed(1)+'%','center','labor-result'),
+  label(right[0]+(right[0]<api.getWidth()-130?8:-8),right[1], 'Coalition '+api.value(3).toFixed(1)+'%',right[0]<api.getWidth()-130?'left':'right','coalition-result'),
+  label(leftEnd[0]+(leftEnd[0]>110?-8:8),leftEnd[1], 'Other '+api.value(4).toFixed(1)+'%',leftEnd[0]>110?'right':'left','other-result')
+ ];
+ return {type:'group',children:[
+  {type:'circle',name:api.value(6),shape:{cx:p[0],cy:p[1],r:r},style:{fill:color,opacity:.8},
+   emphasis:{style:{fill:color,opacity:.8,stroke:'#344051',lineWidth:1}},z2:10},
+  guide(ends[0],'labor'),guide(ends[1],'coalition'),guide(ends[2],'other'),
+  labels[0],labels[1],labels[2],
+  label(Math.max(100,Math.min(api.getWidth()-100,p[0])),p[1]-16,api.value(6)+(api.value(5)?' *':''),'center','seat-name')
+ ]};
 }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
- tip=JsCode("""function(p){var v=p.value;return v[6]+'<br>Labor '+v[2].toFixed(2)+'%<br>Coalition '+v[3].toFixed(2)+'%<br>Other '+v[4].toFixed(2)+'%'+(v[5]?'<br>'+v[5]:'');}""").js_code
  series=[dict(type='custom',name='Dominance regions',coordinateSystem='none',renderItem=background,data=[0],silent=True,z=0,tooltip=dict(show=False))]
  sub=df[df.election_year==year]
- for g in GROUPS:
+ for party,color in PARTY_COLORS.items():
   data=[]
-  for _,r in sub.iterrows():
+  for _,r in sub[sub.winner_party==party].iterrows():
    vals=[float(r[x+'_pct']) for x in ['labor','coalition','other']]
-   if GROUPS[max(range(3),key=lambda j:vals[j])]!=g:continue
    x,y=ternary_xy(*vals)
    quality='Source totals differ; shares normalised to candidate sum' if not bool(r.get('reconciles',True)) else ''
-   data.append(dict(name=r.electorate,value=[x,y,*vals,quality,r.electorate,g]))
-  series.append(dict(type='custom',name=g,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color={'Labor':'#df526b','Coalition':'#397fc6','Other':'#858585'}[g]),z=3))
- return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left=16,top=16,textStyle=dict(color='#252b33',fontSize=22,fontWeight=500)),tooltip=dict(trigger='item',formatter=tip,confine=True),series=series)
+   data.append(dict(name=r.electorate,value=[x,y,*vals,quality,r.electorate,party,r.winner]))
+  series.append(dict(type='custom',name=party,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color=color),emphasis=dict(focus='none'),z=3))
+ return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left=16,top=16,textStyle=dict(color='#252b33',fontSize=22,fontWeight=500)),tooltip=dict(show=False),series=series)
 
 def windsock_rows(final,centres,focus,basis,half=False):
  d=final.merge(centres,on='electorate',how='inner',validate='many_to_one');tag='tpp' if basis=='Labor–Coalition 2PP' else 'tcp';g=focus.lower()

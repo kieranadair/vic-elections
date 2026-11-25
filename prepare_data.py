@@ -27,6 +27,9 @@ for _,r in rounds[rounds.stage==0].iterrows():
   df.loc[i,g+'_votes']=r[g+'_votes'];df.loc[i,g+'_pct']=100*r[g+'_votes']/r.total_votes
  df.loc[i,'candidate_sum']=r.total_votes;df.loc[i,'source_formal']=r.total_votes;df.loc[i,'reconciles']=True;df.loc[i,'source_url']=r.source_url
 assert len(df)==1049;assert not df.duplicated(['election_year','electorate']).any()
+winners=pd.read_csv(S/'seat_results_1982_2022.csv')[['election_year','electorate','winner_group','winner_party','winner']]
+df=df.merge(winners,on=['election_year','electorate'],validate='one_to_one')
+assert df.winner_party.notna().all()
 df.to_csv(B/'data/first_preferences.csv',index=False)
 centres=[]
 for epoch in [2014,2022]:

@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import streamlit as st
 from streamlit_echarts import st_echarts,Map
-from charts import ternary_options,windsock_rows,map_options,GROUPS
+from charts import ternary_options,windsock_rows,map_options,GROUPS,PARTY_COLORS
 D=Path(__file__).parent/'data'
 st.set_page_config(page_title='Victoria · Electoral currents',layout='wide',initial_sidebar_state='collapsed')
 st.html('<style>[data-testid="stMainBlockContainer"] {max-width: 1200px; padding-left: 2rem; padding-right: 2rem;}</style>')
@@ -16,11 +16,12 @@ first,final,centres,geo=load();years=sorted(first.election_year.unique().tolist(
 with st.sidebar:
  st.header('Data quality')
  include=st.checkbox('Include unreconciled historical primary totals',True)
- st.caption('19 historical seat tables have candidate sums that differ from their formal total. Their ternary shares use the candidate sum; tooltips flag them.')
+ st.caption('19 historical seat tables have candidate sums that differ from their formal total. Their ternary shares use the candidate sum; an asterisk on hovered seat names flags them.')
 t1,t2,t3=st.tabs(['Ternary','Windsock map','Data & methods'],key='view_tab',on_change='rerun')
 with t1:
  st.subheader('How first preferences changed')
- st.caption('One seat per mark · Labor circles, Coalition squares, Other diamonds. Shaded regions show which bloc has the largest first-preference share.')
+ st.caption('One circle per seat · Position: first preferences · Colour: elected party after preferences. Hover a circle for its name and vote-share guides.')
+ st.markdown(' &nbsp; '.join(f'<span style="color:{color}">●</span> {party}' for party,color in PARTY_COLORS.items()),unsafe_allow_html=True)
  df=first if include else first[first.reconciles]
  if t1.open:
   gallery=st.grid(2,min_column_width=380,width=1080,gap=20)
