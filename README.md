@@ -53,12 +53,16 @@ Full distributions: https://www.vec.vic.gov.au/results/electoral-statistics/stat
 
 `prepare_data.py` is an optional source-rebuild helper. It uses the included `research/` source directory and additionally requires the packages in `requirements-dev.txt`. App runtime does not need these or an external service.
 
+## Live deployments
+
+The app loads the current `charts.py` source into an isolated module on each run. This avoids stale helper functions and constants surviving a Community Cloud code update, without reloading a module shared by other sessions. Data-cache keys include CSV/GeoJSON file versions so new winner fields and corrected values are read after deployment.
+
 ## Validation
 
 ```sh
-python -m unittest discover -p 'test_charts.py'
+python -m unittest discover -p 'test_*.py'
 ```
 
-Checks cover ternary vertices and sums, elected-party colouring where the primary leader differs, 80% circle opacity, four ticks per edge, exact edge-projection values, final margins, absent focus groups, and conservation through all 88 2022 distributions. Streamlit AppTest checks page execution and switching chart tabs and focus groups. ECharts JavaScript callbacks were syntax-checked with Node. The revised grid was run internally in Chromium at 1440px and 1366px laptop widths. All 12 static charts render without browser errors. Triangle side equality is also checked by executing the actual renderer at widths from 320px to 680px. The app was run internally in Chromium. Ternary and windsock rendering, switching chart tabs, Melbourne zoom, and selecting 1982 were checked with screenshots. A hidden-tab chart initialisation bug was fixed. Screenshots are included in `screenshots/`; continuous playback has not been separately timed.
+Live-update regression tests preload an obsolete chart module and update chart source plus CSV data within an existing session. Checks also cover ternary vertices and sums, elected-party colouring where the primary leader differs, 80% circle opacity, four ticks per edge, exact edge-projection values, final margins, absent focus groups, and conservation through all 88 2022 distributions. Streamlit AppTest checks page execution and switching chart tabs and focus groups. ECharts JavaScript callbacks were syntax-checked with Node. The revised grid was run internally in Chromium at 1440px and 1366px laptop widths. All 12 static charts render without browser errors. Triangle side equality is also checked by executing the actual renderer at widths from 320px to 680px. The app was run internally in Chromium. Ternary and windsock rendering, switching chart tabs, Melbourne zoom, and selecting 1982 were checked with screenshots. A hidden-tab chart initialisation bug was fixed. Screenshots are included in `screenshots/`; continuous playback has not been separately timed.
 
 Deploy on a Python-capable service (for example Streamlit Community Cloud), with `app.py` as the entry point. This is a runnable source delivery, not a hosted deployment; static/Cloudflare Worker hosting does not run a Streamlit Python server.
