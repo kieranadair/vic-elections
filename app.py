@@ -64,8 +64,7 @@ with st.container(horizontal=True, horizontal_alignment="center"):
                     with st.container(width=600):
                         st.echarts_chart(charts.bar_legend_options(),height=110,theme=None,key="summary_key",alt="Dummy example: seats are Labor 55%, minor parties and independents 15%, Liberal–National 30%; votes are 40%, 20%, 40%. A vertical line marks 50%.")
                 st.caption("Dummy data: Labor has 40% of votes but 55% of seats; Minor Parties / Independents have 20% of votes and 15% of seats; Liberal–National has 40% of votes and 30% of seats.")
-                include = st.checkbox("Include flagged historical vote totals", value=True, key="include_flagged")
-                st.caption("19 historical tables have candidate sums that differ from published formal totals. Shares use the candidate sum; an asterisk on hover flags these seats. This control filters the circles, while statewide bars and trends retain all recorded votes.")
+                include = st.checkbox("Include flagged historical vote totals", value=True, key="include_flagged", help="Filter flagged seat circles. Statewide bars and the trend chart retain all recorded votes; see the data note at the bottom.")
 
         visible = first if include else first[first.reconciles]
         for chapter in chapters:
@@ -79,22 +78,19 @@ with st.container(horizontal=True, horizontal_alignment="center"):
                 with plot:
                     st_echarts(charts.ternary_options(visible, year, highlight=highlight, summary_df=first), height=f"{charts.CHART_HEIGHT}px", key=f"ternary-{year}")
 
-        with st.container(width=1100):
-            st.caption("The circles show seats, not a panel of the same voters. Boundaries, candidates and turnout change between elections, so a changing pattern can reflect both voter preferences and the choices available. The Minor Parties / Independents group brings together candidates with different political outlooks; it is not a single movement. Figures cover Legislative Assembly general elections, with the January 2023 Narracan supplementary poll included in 2022.")
+        # The grid shares the gallery's four tracks and gaps, so the explorer
+        # starts exactly at the first chart column and spans the remaining three.
+        explorer = st.grid(4, min_column_width=200, gap="xsmall", key="electorate_explorer")
+        with explorer.cell():
+            with st.container(gap="xsmall", key="electorate_explorer_context"):
+                st.subheader("Explore Your Electorate")
+                highlight = st.selectbox("Highlight an electorate", sorted(first.electorate.unique().tolist()), index=None, placeholder="All Victoria · choose an electorate", key="highlight_electorate")
+                st.markdown("See how the wider trend has played out locally. Choose a seat to update the line chart and its reference lines above; clear it to return to Victoria overall.")
+                if highlight:
+                    st.caption("● Filled: elected group after preferences. ○ Hollow: other groups. Each circle marks an election.")
+                else:
+                    st.caption("Each circle marks an election. Choose a seat to see its winning group marked with a filled circle.")
+        with explorer.cell(column_span=3):
+            st.echarts_chart(charts.primary_trend_options(first,highlight),height=charts.CHART_HEIGHT,theme=None,key="primary_trend",alt=f"First-preference vote shares for {highlight or 'Victoria overall'} across elections from 1982 to 2022. Labor, Liberal–National and minor parties and independents are shown separately.")
 
-        st.divider()
-        st.header("Explore Your Electorate")
-        highlight = st.selectbox("Highlight an electorate", sorted(first.electorate.unique().tolist()), index=None, placeholder="All Victoria · choose an electorate", key="highlight_electorate", width=360)
-        explanation, trend = st.columns([1, 3], gap="large")
-        with explanation:
-            st.markdown("The statewide story brings together many local contests. Has support for minor parties and independents grown in your electorate, or have the major parties held their ground?")
-            st.markdown("Choose a seat to follow its three first-preference shares through time. Its dot and reference lines will also appear in the triangles above, letting you place the local story within the wider pattern. Clear your selection to return to Victoria overall.")
-        with trend:
-            st.markdown(f"**{highlight or 'Victoria overall'} · first-preference vote, 1982–2022**")
-            st.echarts_chart(charts.primary_trend_options(first,highlight),height=380,theme=None,key="primary_trend",alt=f"First-preference vote shares for {highlight or 'Victoria overall'} across elections from 1982 to 2022. Labor, Liberal–National and minor parties and independents are shown separately.")
-            if highlight:
-                st.caption("● Filled circle: the group that won this seat after preferences. ○ Hollow circle: the other groups. Every circle marks an election; the winning group need not lead on first preferences.")
-            else:
-                st.caption("Each hollow circle marks an election. Statewide shares combine vote counts from all electorates; they are not an average of seat percentages. Select an electorate to see its winners marked with filled circles.")
-        with st.container(width=1100):
-            st.caption("Electorates are matched by name. A gap means no result is recorded under that name for that election; lines do not bridge missing results. Boundaries can change even when a name stays the same, so these are histories of named seats rather than a fixed set of voters.")
+        st.caption("**Data notes.** Legislative Assembly general elections, 1982–2022; 2022 includes Narracan’s January 2023 supplementary poll. Statewide vote shares use summed recorded candidate votes, rather than an average of seat percentages. In 19 historical tables, candidate sums differ from published formal totals: shares use the candidate sum, and an asterisk on hover flags the seat. The guide’s checkbox filters circles only; statewide bars and trends retain all recorded votes. Electorates are matched by name, with gaps for missing years. Boundaries, candidates and turnout change, so the charts do not follow a fixed group of voters. Minor Parties / Independents combines candidates with different political outlooks.")

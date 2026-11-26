@@ -54,9 +54,18 @@ with sync_playwright() as playwright:
     frame.screenshot(path=str(ROOT/'screenshots/ternary-hover-story.png'))
     page.get_by_role('heading',name='Explore Your Electorate',exact=True).scroll_into_view_if_needed()
     page.get_by_role('heading',name='Explore Your Electorate',exact=True).evaluate("el=>el.scrollIntoView({block:'start'})")
-    assert page.get_by_role('combobox').bounding_box()['y'] < page.get_by_text('The statewide story brings together many local contests.',exact=False).bounding_box()['y']
+    assert page.get_by_role('combobox').bounding_box()['y'] < page.get_by_text('See how the wider trend has played out locally.',exact=False).bounding_box()['y']
+    explorer=page.locator('.st-key-electorate_explorer')
+    context=page.locator('.st-key-electorate_explorer_context').bounding_box()
+    first_chart=page.locator('iframe').nth(9).bounding_box()
+    line_chart=page.get_by_test_id('stEChartsChart').bounding_box()
+    assert abs(context['width']-page.get_by_role('heading',level=3).nth(3).locator('xpath=ancestor::div[@data-testid="stColumn"][1]').bounding_box()['width']) < 1
+    assert abs(line_chart['x']-first_chart['x']) < 1, 'Explorer must align with the gallery chart columns'
+    assert abs(explorer.bounding_box()['height']-380) < 2, 'Explorer must be one chart row tall'
+    assert page.get_by_text('Data notes.',exact=False).bounding_box()['y'] > line_chart['y']+line_chart['height']
     page.wait_for_timeout(500)
     page.screenshot(path=str(ROOT/'screenshots/explore-statewide.png'))
+    explorer.screenshot(path=str(ROOT/'screenshots/explore-row.png'))
     # A selected seat keeps its guides after the pointer leaves the chart.
     selector=page.get_by_role('combobox')
     selector.click()
@@ -69,7 +78,7 @@ with sync_playwright() as playwright:
     page.screenshot(path=str(ROOT/'screenshots/explore-northcote.png'))
     canvas=page.get_by_test_id('stEChartsChart').locator('canvas').first
     trend_box=canvas.bounding_box()
-    page.mouse.move(trend_box['x']+trend_box['width']-166,trend_box['y']+20+(trend_box['height']-64)*(1-seat.labor_pct/100))
+    page.mouse.move(trend_box['x']+trend_box['width']-166,trend_box['y']+40+(trend_box['height']-84)*(1-seat.labor_pct/100))
     page.wait_for_timeout(400)
     assert page.get_by_text('Elected: Labor',exact=False).is_visible()
     assert page.get_by_text('Labor: 41%',exact=False).is_visible()

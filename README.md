@@ -34,7 +34,7 @@ The skill is installed in this working checkout. Its environment-specific symlin
 - Light grey rules and four unlabelled ticks per edge mark 20, 40, 60 and 80%. The triangle is equilateral at every component width.
 - Three charts per row, with a context column on the left, across four historical periods. Equal 1:1:1:1 columns inside a 1,600px page bound preserve the previous triangle size at laptop widths. Years are centred above each plot; axis labels use group names without a 100% prefix. Each year has its own title band, separated from the top axis label without shrinking the triangle. Narrower screens stack the columns. The app uses a white theme.
 
-The page contains the gallery, researched explanations, an expandable reading guide and the final electorate explorer. The windsock map, data/methods tabs and three-candidate controls have been removed from the app. Earlier research files and chart helpers remain in the repository as working material.
+The page contains the gallery, researched explanations, an expandable reading guide and the final electorate explorer, followed by one consolidated data note. The windsock map, data/methods tabs and three-candidate controls have been removed from the app. Earlier research files and chart helpers remain in the repository as working material.
 
 ## Historical explanations
 
@@ -52,6 +52,8 @@ The reading guide explains the three shares, positions and gridlines in three pa
 ## Explore Your Electorate
 
 Three lines show first-preference shares for each election. Victoria overall is the default: group vote counts are summed before calculating percentages. Selecting an electorate switches to its recorded shares and highlights its points in the historical triangles. Elections use proportional time spacing, with a circle at each observed election and gaps for missing seat-years.
+
+The explorer sits directly below the gallery in a matching four-track grid: its heading, dropdown and explanation occupy the left track, and the 380px-high line chart spans the other three. The chart title is inside the plot component, so the whole explorer stays one chart row tall. One data note at the bottom covers coverage, vote weighting, flagged historical totals and changing seat boundaries.
 
 In a selected seat, **filled circles** identify the group that won after preferences; the other groups have **hollow circles**. Circle size and party colours stay consistent. Tooltips show whole-percentage shares and the actual winning party. Statewide markers remain hollow because this view has no individual electorate winner. See [the design research](research/chart-design.md) for the guidance informing these choices.
 

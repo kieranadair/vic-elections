@@ -25,7 +25,7 @@ class LiveUpdateChecks(unittest.TestCase):
         with patch.dict(sys.modules, {'charts': stale}):
             app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=30).run()
             self.assertFalse(app.exception, [e.message for e in app.exception])
-            self.assertEqual(len(app.subheader), 4)
+            self.assertEqual(len(app.subheader), 5)
             self.assertFalse(app.tabs)
             self.assertIs(sys.modules['charts'], stale)
 
@@ -42,7 +42,7 @@ class LiveUpdateChecks(unittest.TestCase):
         self.assertIn('100% stacked bars', markdown)
         self.assertIn('summed vote counts', markdown)
         self.assertFalse(app.info)
-        self.assertEqual(app.header[0].value, 'Explore Your Electorate')
+        self.assertEqual(app.subheader[-1].value, 'Explore Your Electorate')
         self.assertNotIn('Sources:', markdown)
 
     def test_electorate_dropdown_persists_across_elections(self):
