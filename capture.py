@@ -54,6 +54,7 @@ with sync_playwright() as playwright:
     frame.screenshot(path=str(ROOT/'screenshots/ternary-hover-story.png'))
     page.get_by_role('heading',name='Explore Your Electorate',exact=True).scroll_into_view_if_needed()
     page.get_by_role('heading',name='Explore Your Electorate',exact=True).evaluate("el=>el.scrollIntoView({block:'start'})")
+    assert page.get_by_role('combobox').bounding_box()['y'] < page.get_by_text('The statewide story brings together many local contests.',exact=False).bounding_box()['y']
     page.wait_for_timeout(500)
     page.screenshot(path=str(ROOT/'screenshots/explore-statewide.png'))
     # A selected seat keeps its guides after the pointer leaves the chart.

@@ -84,10 +84,10 @@ with st.container(horizontal=True, horizontal_alignment="center"):
 
         st.divider()
         st.header("Explore Your Electorate")
+        highlight = st.selectbox("Highlight an electorate", sorted(first.electorate.unique().tolist()), index=None, placeholder="All Victoria · choose an electorate", key="highlight_electorate", width=360)
         explanation, trend = st.columns([1, 3], gap="large")
         with explanation:
             st.markdown("The statewide story brings together many local contests. Has support for minor parties and independents grown in your electorate, or have the major parties held their ground?")
-            highlight = st.selectbox("Highlight an electorate", sorted(first.electorate.unique().tolist()), index=None, placeholder="All Victoria · choose an electorate", key="highlight_electorate")
             st.markdown("Choose a seat to follow its three first-preference shares through time. Its dot and reference lines will also appear in the triangles above, letting you place the local story within the wider pattern. Clear your selection to return to Victoria overall.")
         with trend:
             st.markdown(f"**{highlight or 'Victoria overall'} · first-preference vote, 1982–2022**")
