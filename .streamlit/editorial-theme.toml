@@ -1,0 +1,22 @@
+# Editorial theme for the Victorian elections story.
+# Referenced by config.toml; reusable without application CSS.
+[theme]
+base = "light"
+primaryColor = "#243F53"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F6F7"
+textColor = "#16191D"
+linkColor = "#355A75"
+borderColor = "#E2E6E9"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+headingFont = "'Source Serif 4':https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600&display=swap"
+baseFontSize = 16
+baseFontWeight = 400
+headingFontSizes = ["44px", "30px", "22px", "19px", "17px", "15px"]
+headingFontWeights = [600, 500, 500, 500, 500, 500]
+paddingTop = "1.25rem"
+paddingBottom = "2.5rem"
+baseRadius = "8px"
+buttonRadius = "8px"
+showWidgetBorder = true
+chartCategoricalColors = ["#cc4359", "#50555a", "#377db8"]

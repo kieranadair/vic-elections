@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_echarts import st_echarts
 
-st.set_page_config(page_title="minor parties / independents · Victoria, 1982–2022", page_icon=":material/how_to_vote:", layout="wide")
+st.set_page_config(page_title="Victorian Elections · 1982–2022", page_icon=":material/how_to_vote:", layout="wide")
 
 # Read current trusted source on each run: Community Cloud can retain imported
 # helpers across deploys. An isolated module avoids stale code and shared reloads.
@@ -30,31 +30,33 @@ file_versions = tuple(
 first, chapters = load(file_versions)
 
 with st.container(horizontal=True, horizontal_alignment="center"):
-    with st.container(width=1600, gap="large"):
+    with st.container(width=1600, gap="medium"):
         with st.container(gap="xsmall"):
-            st.badge("1982–2022", color="green")
-            st.title("The rise of minor parties / independents in Victorian elections")
+            st.info("1982–2022", icon=":material/calendar_month:", width=190)
+            with st.container(width=960):
+                st.title("The Rise of Minor Parties and Independents in Victorian Elections")
             with st.container(width=1100):
                 st.markdown("For much of the 1980s, Victoria’s lower-house elections were contests between two big party blocs. Over the next four decades, more voters gave their first choice to the Greens, other minor parties or independent candidates. These charts follow that widening field, seat by seat—and show why growing first-choice support does not always mean more seats in Parliament.")
 
-        with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="bottom"):
-            st.markdown(" &nbsp; &nbsp; ".join(f'<span style="color:{color}">●</span> {group}' for group, color in charts.WINNER_COLORS.items()), unsafe_allow_html=True)
-            with st.container(horizontal=True, vertical_alignment="bottom", gap="small"):
-                with st.popover("Reading the charts", icon=":material/info:", key="reading_guide", on_change="rerun") as guide:
-                    with st.container(width=440):
-                        st.markdown("**Each election is represented using a ternary chart, this is a chart that shows three shares that add to 100%.** Here, the corners represent Labor, Liberal–National, and minor parties / independents. Each circle is a seat, positioned using its first-preference vote shares.")
-                        st.markdown("Moving closer to a corner means a larger share for that group. The bottom edge represents no minor-party or independent votes; moving upward means a larger combined share for those candidates. The centre represents an equal three-way split.")
-                        if guide.open:
-                            st_echarts(charts.example_options(),height="300px",key="ternary-example")
-                        st.caption("Dummy data: Labor 40%, Liberal–National 35%, minor parties / independents 25%. The reference lines meet each edge at that share.")
-                        st.markdown("**Why use it?** A two-party chart hides votes outside the major blocs. A ternary chart makes those votes visible while preserving the balance between Labor and Liberal–National. Comparing the same triangle over time reveals both shifts between the majors and the widening field of first choices.")
-                        st.markdown("The shaded regions show which group leads on first preferences. **Circle colour shows the winning group after preferences**, which can differ. Hover for the seat name and whole-percentage shares; the unlabelled edge ticks mark 20, 40, 60 and 80%.")
-                        st.markdown("Choose an electorate to keep its dot and reference lines highlighted in every election where that name appears. Clear the selection to inspect other seats on hover. Boundaries can change even when a name stays the same.")
-                        st.caption("The thin bars below each chart show statewide seats won (top) and first-preference votes (bottom), using the legend colours. Vote shares are weighted by recorded vote counts, not averaged across seats. The bars always include all recorded seats.")
-                        include = st.checkbox("Include flagged historical vote totals", value=True, key="include_flagged")
-                        st.caption("19 historical tables have candidate sums that differ from published formal totals. Shares use the candidate sum; an asterisk on hover flags these seats.")
-                highlight = st.selectbox("Highlight an electorate", sorted(first.electorate.unique().tolist()), index=None, placeholder="Choose an electorate", key="highlight_electorate", width=270)
-        st.caption("Thin bars beneath each triangle: seats won above, first-preference votes below.")
+        with st.container(horizontal=True, vertical_alignment="bottom", gap="small"):
+            with st.popover("Reading the charts", icon=":material/info:", key="reading_guide", on_change="rerun") as guide:
+                with st.container(width=440):
+                    st.markdown("**Each election is represented using a ternary chart, this is a chart that shows three shares that add to 100%.** Here, the corners represent Labor, Liberal–National, and Minor Parties / Independents. Each circle is a seat, positioned using its first-preference vote shares.")
+                    st.markdown("Moving closer to a corner means a larger share for that group. The bottom edge represents no minor-party or independent votes; moving upward means a larger combined share for those candidates. The centre represents an equal three-way split.")
+                    if guide.open:
+                        st_echarts(charts.example_options(),height=f"{charts.EXAMPLE_HEIGHT}px",key="ternary-example")
+                    st.caption("Dummy data: Labor 40%, Liberal–National 35%, Minor Parties / Independents 25%. The reference lines meet each edge at that share.")
+                    st.markdown("**Why use it?** A two-party chart hides votes outside the major blocs. A ternary chart makes those votes visible while preserving the balance between Labor and Liberal–National. Comparing the same triangle over time reveals both shifts between the majors and the widening field of first choices.")
+                    st.markdown("The shaded regions show which group leads on first preferences. **Circle colour shows the winning group after preferences**, which can differ. Hover for the seat name and whole-percentage shares; the unlabelled edge ticks mark 20, 40, 60 and 80%.")
+                    st.markdown("Choose an electorate to keep its dot and reference lines highlighted in every election where that name appears. Clear the selection to inspect other seats on hover. Boundaries can change even when a name stays the same.")
+                    st.caption("The bars below each chart show statewide seats won (top) and first-preference votes (bottom). From left to right: Labor, Minor Parties / Independents, Liberal–National. The vertical tick marks 50%. Vote shares are weighted by recorded vote counts, not averaged across seats. The bars always include all recorded seats.")
+                    include = st.checkbox("Include flagged historical vote totals", value=True, key="include_flagged")
+                    st.caption("19 historical tables have candidate sums that differ from published formal totals. Shares use the candidate sum; an asterisk on hover flags these seats.")
+            highlight = st.selectbox("Highlight an electorate", sorted(first.electorate.unique().tolist()), index=None, placeholder="Choose an electorate", key="highlight_electorate", width=270)
+        with st.container(gap="xxsmall"):
+            st.markdown(" &nbsp; &nbsp; ".join(f'<span style="color:{charts.WINNER_COLORS[group]}">●</span> {group}' for group in ['Labor', charts.MINOR_LABEL, 'Liberal–National']), unsafe_allow_html=True)
+            with st.container(width=470):
+                st.echarts_chart(charts.bar_legend_options(),height=76,theme=None,key="summary_key",alt="Illustrative stacked bars: percent seats above, percent votes below, with Minor Parties / Independents in the middle and a 50 percent reference line.")
 
         visible = first if include else first[first.reconciles]
         for chapter in chapters:
@@ -69,4 +71,4 @@ with st.container(horizontal=True, horizontal_alignment="center"):
                     st_echarts(charts.ternary_options(visible, year, highlight=highlight, summary_df=first), height=f"{charts.CHART_HEIGHT}px", key=f"ternary-{year}")
 
         with st.container(width=1100):
-            st.caption("The circles show seats, not a panel of the same voters. Boundaries, candidates and turnout change between elections, so a changing pattern can reflect both voter preferences and the choices available. The minor parties / independents group brings together candidates with different political outlooks; it is not a single movement. Figures cover Legislative Assembly general elections, with the January 2023 Narracan supplementary poll included in 2022.")
+            st.caption("The circles show seats, not a panel of the same voters. Boundaries, candidates and turnout change between elections, so a changing pattern can reflect both voter preferences and the choices available. The Minor Parties / Independents group brings together candidates with different political outlooks; it is not a single movement. Figures cover Legislative Assembly general elections, with the January 2023 Narracan supplementary poll included in 2022.")

@@ -1,4 +1,4 @@
-# The rise of minor parties / independents in Victorian elections
+# The Rise of Minor Parties and Independents in Victorian Elections
 
 1982–2022
 
@@ -26,13 +26,13 @@ The skill is installed in this working checkout. Its environment-specific symlin
 
 ## Reading the gallery
 
-- One circle per seat, positioned by **first-preference shares** for Labor, Liberal/National Coalition and minor parties / independents.
-- Colour represents the **winning group after preferences**: Labor (red), Liberal–National (blue), minor parties / independents (dark grey). This includes Greens and independent winners.
+- One circle per seat, positioned by **first-preference shares** for Labor, Liberal/National Coalition and Minor Parties / Independents.
+- Colour represents the **winning group after preferences**: Labor (red), Liberal–National (blue), Minor Parties / Independents (dark grey). This includes Greens and independent winners.
 - All circles use 80% opacity. Hover for the seat name and three reference lines, with whole-percentage vote shares at the edges.
 - Choose a name in **Highlight an electorate** to keep that seat outlined and its guides visible across all elections where the name appears. Clear the selection to return to ordinary hover. A note marks years without a displayed record; seats are not mapped across renamings or boundary changes.
-- Two thin, unlabelled 100% stacked bars sit below every triangle: statewide seats won above, recorded first-preference votes below. They share the winner-group palette. Vote shares are weighted by vote counts, rather than averaged across seats, and both bars always use all recorded seats even when the dot filter is active.
+- Two thin, unlabelled 100% stacked bars sit below every triangle: statewide seats won above, recorded first-preference votes below. They use the same palette, ordered Labor → Minor Parties / Independents → Liberal–National, with a 50% vertical reference. Each strip is eight pixels thick. Vote shares are weighted by vote counts, rather than averaged across seats, and both bars always use all recorded seats even when the dot filter is active.
 - Light grey rules and four unlabelled ticks per edge mark 20, 40, 60 and 80%. The triangle is equilateral at every component width.
-- Three charts per row, with a context column on the left, across four historical periods. Equal 1:1:1:1 columns inside a 1,600px page bound preserve the previous triangle size at laptop widths. Years are centred above each plot; axis labels use group names without a 100% prefix. The date range appears in a green badge above the title. Narrower screens stack the columns. The app uses a white theme.
+- Three charts per row, with a context column on the left, across four historical periods. Equal 1:1:1:1 columns inside a 1,600px page bound preserve the previous triangle size at laptop widths. Years are centred above each plot; axis labels use group names without a 100% prefix. The date range appears in an info box with a calendar icon above the title. Each year has its own title band, separated from the top axis label without shrinking the triangle. Narrower screens stack the columns. The app uses a white theme.
 
 The page contains only the gallery, researched explanations and a compact reading/data popover. The windsock map, data/methods tabs and three-candidate controls have been removed from the app. Earlier research files and chart helpers remain in the repository as working material.
 
@@ -47,7 +47,7 @@ Four three-election periods tell the story of first choices gradually spreading 
 
 Text and research links live in `data/election_context.json`. Sources include the Victorian Parliament’s *Visualising Victoria’s electoral history*, its 2022 election report, the Australian Election Archive and the VEC. Source links are retained for research traceability but not printed under the on-page descriptions. Parliamentary PDFs are retained under `research/context/`.
 
-The reading helper explains the three shares, positions and gridlines. An annotated dummy seat (40% Labor, 35% Liberal–National, 25% minor parties / independents) follows the second paragraph; its reference lines are always visible. The example is only rendered when the guide is open. It is not part of the election dataset.
+The reading helper explains the three shares, positions and gridlines. An annotated dummy seat (40% Labor, 35% Liberal–National, 25% Minor Parties / Independents) follows the second paragraph; its reference lines are always visible. The example is only rendered when the guide is open. It is not part of the election dataset.
 
 ## Data and limits
 
@@ -55,9 +55,15 @@ The gallery contains 1,049 seat-election rows across 12 elections. Historical pr
 
 **19 historical tables fail candidate-sum versus published-formal-total reconciliation.** Their shares use the candidate sum. An asterisk on the hovered name flags these seats; the reading popover can exclude them. Historical coverage remains provisional rather than representing every raw count as independently verified.
 
-minor parties / independents includes Greens and other candidates with differing politics. Seat boundaries and ballot choices change over time, so these are not the same voters tracked across elections. 2022 includes Narracan’s January 2023 supplementary election. There are no 2026 results: the election had not occurred at compilation on 25 November 2026.
+Minor Parties / Independents includes Greens and other candidates with differing politics. Seat boundaries and ballot choices change over time, so these are not the same voters tracked across elections. 2022 includes Narracan’s January 2023 supplementary election. There are no 2026 results: the election had not occurred at compilation on 25 November 2026.
 
 Additional workbooks, final 2PP/2CP counts, intermediate 2022 rounds and map files from earlier work remain available in `data/` and `research/`. They are not loaded or displayed by this app.
+
+## Theme and legends
+
+`.streamlit/config.toml` loads `.streamlit/editorial-theme.toml`. The theme pairs Inter body text with Source Serif 4 headings, uses a white background and near-black text, and sets heading/body sizes, spacing, radii and neutral control surfaces. Google Fonts are declared through Streamlit’s native theme settings. No application CSS is required.
+
+The guide and electorate selector sit above both legends. The colour key matches the bar order; a native ECharts key immediately below it labels dummy rows **% seats** (top) and **% votes** (bottom) and identifies the 50% reference. These labels are shared across the page rather than repeated on every election plot.
 
 ## Live deployments
 

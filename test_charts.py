@@ -24,11 +24,11 @@ class ChartChecks(unittest.TestCase):
   callback=options['series'][0]['renderItem'].replace('--x_x--0_0--','')
   script='const render=('+callback+');'+"""
   for (const width of [245,280,320,520]) {
-   const scene=render({}, {getWidth:()=>width,getHeight:()=>350});
+   const scene=render({}, {getWidth:()=>width,getHeight:()=>380});
    const points=scene.children[3].shape.points;
    const sides=points.map((p,i)=>Math.hypot(p[0]-points[(i+1)%3][0],p[1]-points[(i+1)%3][1]));
    if(Math.max(...sides)-Math.min(...sides)>1e-8)throw Error('Triangle stretched at '+width);
-   if(points.some(p=>p[0]<0||p[0]>width||p[1]<0||p[1]>350))throw Error('Triangle clipped');
+   if(points.some(p=>p[0]<0||p[0]>width||p[1]<0||p[1]>380))throw Error('Triangle clipped');
   }
   """
   subprocess.run(['node','-e',script],check=True,capture_output=True,text=True)
@@ -43,18 +43,18 @@ class ChartChecks(unittest.TestCase):
   self.assertIn('Northcote',[p['name'] for p in labor['data']])
   # The 2014 Prahran winner was Greens, although Coalition led on primaries.
   options=ternary_options(d,2014)
-  greens=next(s for s in options['series'] if s['name']=='minor parties / independents')
+  greens=next(s for s in options['series'] if s['name']=='Minor Parties / Independents')
   self.assertIn('Prahran',[p['name'] for p in greens['data']])
-  self.assertEqual(greens['itemStyle']['color'],WINNER_COLORS['minor parties / independents'])
+  self.assertEqual(greens['itemStyle']['color'],WINNER_COLORS['Minor Parties / Independents'])
  def test_three_winner_groups_cover_every_seat(self):
   from charts import WINNER_COLORS
   d=pd.read_csv(D/'first_preferences.csv')
-  self.assertEqual(list(WINNER_COLORS),['Labor','Liberal–National','minor parties / independents'])
+  self.assertEqual(list(WINNER_COLORS),['Labor','Liberal–National','Minor Parties / Independents'])
   for year in d.election_year.unique():
    series=markers(ternary_options(d,year))
    self.assertEqual(sum(len(s['data']) for s in series),len(d[d.election_year==year]))
   counts={s['name']:len(s['data']) for s in markers(ternary_options(d,2022))}
-  self.assertEqual(counts,{'Labor':56,'Liberal–National':28,'minor parties / independents':4})
+  self.assertEqual(counts,{'Labor':56,'Liberal–National':28,'Minor Parties / Independents':4})
  def test_hover_guides_and_axis_ticks(self):
   import subprocess,shutil,json
   if not shutil.which('node'):self.skipTest('Node is needed to execute the chart renderer')
@@ -66,7 +66,7 @@ class ChartChecks(unittest.TestCase):
   script='const render=('+render+');const background=('+background+');const value='+json.dumps(value)+';'+"""
   function check(x,msg){if(!x)throw Error(msg);}
   for(const width of [245,280,320]) {
-   const api={getWidth:()=>width,getHeight:()=>350,value:i=>value[i],visual:()=> '#d34a59'};
+   const api={getWidth:()=>width,getHeight:()=>380,value:i=>value[i],visual:()=> '#d34a59'};
    const scene=render({},api), bg=background({},api);
    check(bg.children.filter(x=>x.name==='axis-tick').length===12,'Four ticks on every edge');
    const marks=scene.children.filter(x=>x.type==='circle');
@@ -104,6 +104,30 @@ class ChartChecks(unittest.TestCase):
    a=next(s for s in filtered['series'] if s['name']==name)
    b=next(s for s in full['series'] if s['name']==name)
    self.assertEqual(a['data'],b['data'])
+ def test_bars_have_centred_minor_segment_and_halfway_tick(self):
+  import subprocess,shutil,json
+  if not shutil.which('node'):self.skipTest('Node is needed to execute the bar renderer')
+  d=pd.read_csv(D/'first_preferences.csv');o=ternary_options(d,2022)
+  bars=[s for s in o['series'] if s['name'] in ['Seats won','First-preference vote']]
+  for i,bar in enumerate(bars):
+   code=bar['renderItem'].replace('--x_x--0_0--','')
+   script='const render=('+code+');const value='+json.dumps(bar['data'][0])+';'+"""
+   const scene=render({}, {getWidth:()=>310,getHeight:()=>380,value:i=>value[i]});
+   const segments=scene.children.filter(c=>c.type==='rect');
+   if(segments.map(c=>c.name).join(',')!=='segment-0,segment-2,segment-1')throw Error('Minor group must be in the middle');
+   if(!segments.every(c=>c.shape.height===8))throw Error('Unreadable bar height');
+   const left=segments[0].shape.x,end=segments[2].shape.x+segments[2].shape.width;
+   const tick=scene.children.find(c=>c.name==='fifty-percent-reference');
+   if(tick&&Math.abs(tick.shape.x1-(left+end)/2)>1e-8)throw Error('Reference is not at 50 percent');
+   """
+   script=script.replace('const tick=', 'const requireTick='+str(i==0).lower()+';const tick=')
+   script+='if(requireTick&&!tick)throw Error("Missing 50 percent reference");'
+   subprocess.run(['node','-e',script],check=True,capture_output=True,text=True)
+  from charts import bar_legend_options
+  key=bar_legend_options()
+  self.assertEqual(key['dataset']['source'].Measure.tolist(),['% seats','% votes'])
+  self.assertEqual(key['series'][1]['name'],'Minor Parties / Independents')
+  self.assertEqual(key['series'][0]['markLine']['data'],[{'xAxis':50}])
  def test_persistent_selection_and_missing_year(self):
   d=pd.read_csv(D/'first_preferences.csv')
   o=ternary_options(d,2022,highlight='Northcote')
@@ -115,7 +139,7 @@ class ChartChecks(unittest.TestCase):
    series=next(s for s in markers(o) if s['name']=='Labor');value=selected[0]['value']
    render=series['renderItem'].replace('--x_x--0_0--','')
    script='const render=('+render+');const value='+json.dumps(value)+';'+"""
-   const scene=render({}, {getWidth:()=>300,getHeight:()=>350,value:i=>value[i],visual:()=> '#cc4359'});
+   const scene=render({}, {getWidth:()=>300,getHeight:()=>380,value:i=>value[i],visual:()=> '#cc4359'});
    for(const name of ['labor-reference','coalition-reference','other-reference','labor-result','coalition-result','other-result','seat-name']){
     if(scene.children.find(e=>e.name===name).style.opacity!==1)throw Error('Selected guide is hidden');
    }

@@ -33,7 +33,7 @@ class LiveUpdateChecks(unittest.TestCase):
         import json
         app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=30).run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.title[0].value, 'The rise of minor parties / independents in Victorian elections')
+        self.assertEqual(' '.join(app.title[0].value.split()), 'The Rise of Minor Parties and Independents in Victorian Elections')
         contexts = json.loads((ROOT / 'data/election_context.json').read_text())
         self.assertEqual([len(section['years']) for section in contexts], [3, 3, 3, 3])
         self.assertEqual([year for section in contexts for year in section['years']], sorted(pd.read_csv(ROOT / 'data/first_preferences.csv').election_year.unique().tolist()))
@@ -49,7 +49,7 @@ class LiveUpdateChecks(unittest.TestCase):
         self.assertFalse(app.exception)
         for component in app.get('component_instance'):
             option=json.loads(component.proto.json_args)['options']
-            points=[p for s in option['series'] if s['name'] in ['Labor','Liberal–National','minor parties / independents'] for p in s['data']]
+            points=[p for s in option['series'] if s['name'] in ['Labor','Liberal–National','Minor Parties / Independents'] for p in s['data']]
             selected=[p for p in points if p['value'][9]]
             expected=[p for p in points if p['name']=='Northcote']
             self.assertEqual(selected,expected)

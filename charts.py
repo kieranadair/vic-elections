@@ -1,5 +1,6 @@
 """ECharts option builders. Geometry and vote calculations are testable in Python."""
 import math
+from typing import Any
 from streamlit_echarts import JsCode
 GROUPS=['Labor','Coalition','Other']
 COLORS={'Labor':'#d34a59','Coalition':'#367ac3','Other':'#c89b35'}
@@ -13,15 +14,16 @@ def common():
 # Shared pixel transform keeps x/y scales identical at every component size.
 TERNARY_GEOMETRY_JS = """
 var height = Math.sqrt(3) / 2;
-var side = Math.min(api.getWidth() - 48, (api.getHeight() - 134) / height);
+var side = Math.min(api.getWidth() - 48, (api.getHeight() - 164) / height);
 var left = (api.getWidth() - side) / 2;
-var top = 54;
+var top = 74;
 var bottom = top + side * height;
 function point(x, y) { return [left + side * x, bottom - side * y]; }
 """
 
-MINOR_LABEL = 'minor parties / independents'
-CHART_HEIGHT = 350
+MINOR_LABEL = 'Minor Parties / Independents'
+CHART_HEIGHT = 380
+EXAMPLE_HEIGHT = 330
 WINNER_COLORS = {'Labor': '#cc4359', 'Liberal–National': '#377db8', MINOR_LABEL: '#50555a'}
 WINNER_KEYS = {'Labor': 'Labor', 'Liberal–National': 'Coalition', MINOR_LABEL: 'Other'}
 
@@ -61,7 +63,7 @@ def ternary_options(df, year, highlight=None, summary_df=None, show_summary=True
         var a=tick[0],offset=tick[1],mark=line(a,[a[0]+offset[0],a[1]+offset[1]],'#8c949f',.8);mark.name='axis-tick';children.push(mark);
       });
     });
-    children.push(line(LC,centre),line(LO,centre),line(CO,centre),text(O[0],O[1]-23,'minor parties / independents','#51565e','center'),text(L[0],L[1]+28,'Labor','#bd344e','left'),text(C[0],C[1]+28,'Liberal–National','#2b68af','right'));
+    children.push(line(LC,centre),line(LO,centre),line(CO,centre),text(O[0],O[1]-23,'Minor Parties / Independents','#51565e','center'),text(L[0],L[1]+28,'Labor','#bd344e','left'),text(C[0],C[1]+28,'Liberal–National','#2b68af','right'));
     return {type:'group',children:children};
     }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
     render = JsCode("""function(params, api) {
@@ -78,7 +80,7 @@ def ternary_options(df, year, highlight=None, summary_df=None, show_summary=True
       guide(ends[0],'labor'),guide(ends[1],'coalition'),guide(ends[2],'other'),
       label(Math.max(62,Math.min(api.getWidth()-62,ends[0][0])),bottom+16,'Labor '+api.value(2).toFixed(0)+'%','center','labor-result'),
       label(right[0]+(right[0]<api.getWidth()-130?8:-8),right[1],'Liberal–National '+api.value(3).toFixed(0)+'%',right[0]<api.getWidth()-130?'left':'right','coalition-result'),
-      label(Math.max(100,Math.min(api.getWidth()-100,leftEnd[0])),leftEnd[1]+16,'minor parties / independents\\n'+api.value(4).toFixed(0)+'%','center','other-result'),
+      label(Math.max(100,Math.min(api.getWidth()-100,leftEnd[0])),leftEnd[1]+16,'Minor Parties / Independents\\n'+api.value(4).toFixed(0)+'%','center','other-result'),
       label(Math.max(100,Math.min(api.getWidth()-100,p[0])),p[1]-16,api.value(6)+(api.value(5)?' *':''),'center','seat-name')
     ]};
     }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
@@ -97,15 +99,29 @@ def ternary_options(df, year, highlight=None, summary_df=None, show_summary=True
         for index, (name, shares) in enumerate([('Seats won', summary['seat_shares']), ('First-preference vote', summary['vote_shares'])]):
             bar = JsCode("""function(params,api) {
             GEOMETRY
-            var y=api.getHeight()-25+ROW*11,offset=0,colors=PALETTE,children=[];
-            for(var i=0;i<3;i++){var width=side*api.value(i)/100;children.push({type:'rect',name:'segment-'+i,shape:{x:left+offset,y:y,width:width,height:4},style:{fill:colors[i]}});offset+=width;}
+            var y=api.getHeight()-32+ROW*14,offset=0,colors=PALETTE,children=[],order=[0,2,1];
+            for(var j=0;j<3;j++){var i=order[j],width=side*api.value(i)/100;children.push({type:'rect',name:'segment-'+i,shape:{x:left+offset,y:y,width:width,height:8},style:{fill:colors[i]}});offset+=width;}
+            if(ROW===0)children.push({type:'line',name:'fifty-percent-reference',shape:{x1:left+side/2,y1:api.getHeight()-35,x2:left+side/2,y2:api.getHeight()-7},style:{stroke:'#17191c',lineWidth:1.2},silent:true,z2:10});
             return {type:'group',children:children};
             }""".replace('GEOMETRY',TERNARY_GEOMETRY_JS).replace('ROW',str(index)).replace('PALETTE',repr(list(WINNER_COLORS.values()))).replace('\n',' ')).js_code
             series.append(dict(type='custom',name=name,coordinateSystem='none',renderItem=bar,data=[shares],silent=True,z=1,tooltip=dict(show=False)))
-    options = dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left='center',top=4,padding=0,textStyle=dict(color='#252b33',fontSize=19,fontWeight=500)),tooltip=dict(show=False),series=series)
+    options = dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left='center',top=4,padding=0,textStyle=dict(color='#252b33',fontSize=22,fontWeight=500,fontFamily='Georgia, serif')),tooltip=dict(show=False),series=series)
     if highlight and not (sub.electorate == highlight).any():
-        options['graphic'] = [dict(type='text',left='center',top=305,style=dict(text='No displayed result under this name',fill='#68727e',font='10px sans-serif'))]
+        options['graphic'] = [dict(type='text',left='center',top=330,style=dict(text='No displayed result under this name',fill='#68727e',font='10px sans-serif'))]
     return options
+
+
+def bar_legend_options():
+    """Native ECharts key: illustrative, normalised rows using the chart bar order."""
+    import pandas as pd
+    data = pd.DataFrame({'Measure': ['% seats', '% votes'], 'Labor': [55, 40], MINOR_LABEL: [15, 20], 'Liberal–National': [30, 40]})
+    series = []
+    for group in ['Labor', MINOR_LABEL, 'Liberal–National']:
+        bar: dict[str, Any] = dict(type='bar',name=group,stack='total',barWidth=8,encode=dict(x=group,y='Measure'),itemStyle=dict(color=WINNER_COLORS[group]),silent=True)
+        if not series:
+            bar['markLine'] = dict(silent=True,symbol='none',lineStyle=dict(color='#17191c',width=1.2,type='solid'),label=dict(show=True,formatter='50%',position='start',color='#51565e',fontSize=10),data=[dict(xAxis=50)])
+        series.append(bar)
+    return dict(animation=False,backgroundColor='#ffffff',dataset=dict(source=data),grid=dict(left=65,right=8,top=20,bottom=4),xAxis=dict(type='value',min=0,max=100,show=False),yAxis=dict(type='category',inverse=True,axisTick=dict(show=False),axisLine=dict(show=False),axisLabel=dict(fontSize=12,color='#26313b')),tooltip=dict(show=False),series=series)
 
 
 def example_options():

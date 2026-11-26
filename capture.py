@@ -23,12 +23,14 @@ with sync_playwright() as playwright:
     for width in [1440, 1366]:
         page.set_viewport_size({'width': width, 'height': 1000})
         page.wait_for_timeout(1000)
-        page.locator('iframe').first.scroll_into_view_if_needed()
+        page.get_by_text('1982–2022',exact=True).scroll_into_view_if_needed()
         boxes = [frame.bounding_box() for frame in page.locator('iframe').all()]
         for index in [0, 3, 6, 9]:
             assert max(box['y'] for box in boxes[index:index+3]) - min(box['y'] for box in boxes[index:index+3]) < 2
         assert page.evaluate('getComputedStyle(document.body).backgroundColor') == 'rgb(255, 255, 255)'
         assert min(box['width'] for box in boxes) >= 295, 'Triangles must not shrink at laptop widths'
+        page.get_by_role('heading',level=1).evaluate("el => {for(let p=el;p;p=p.parentElement){p.scrollTop=0;}window.scrollTo(0,0);}")
+        page.wait_for_timeout(200)
         page.screenshot(path=str(ROOT / 'screenshots' / f'story-{width}.png'))
     for row in range(4):
         first = page.locator('iframe').nth(row*3)
@@ -44,9 +46,9 @@ with sync_playwright() as playwright:
     seat = pd.read_csv(ROOT/'data/first_preferences.csv').query('election_year==2022 and electorate=="Northcote"').iloc[0]
     box = frame.bounding_box()
     h = math.sqrt(3)/2
-    side = min(box['width']-48, (box['height']-134)/h)
+    side = min(box['width']-48, (box['height']-164)/h)
     x = (box['width']-side)/2 + side*(seat.coalition_pct+seat.other_pct/2)/100
-    y = 54 + side*h*(1-seat.other_pct/100)
+    y = 74 + side*h*(1-seat.other_pct/100)
     page.mouse.move(box['x']+x, box['y']+y)
     page.wait_for_timeout(400)
     frame.screenshot(path=str(ROOT/'screenshots/ternary-hover-story.png'))
@@ -60,7 +62,7 @@ with sync_playwright() as playwright:
     assert selector.input_value()=='Northcote' or 'Northcote' in page.get_by_test_id('stSelectbox').inner_text()
     page.mouse.move(5,5)
     page.locator('iframe').nth(11).screenshot(path=str(ROOT/'screenshots/electorate-highlight-2022.png'))
-    page.get_by_role('heading',name='The rise of minor parties / independents in Victorian elections',exact=True).scroll_into_view_if_needed()
+    page.get_by_role('heading',level=1).scroll_into_view_if_needed()
     page.get_by_role('button',name='Reading the charts').click()
     page.wait_for_timeout(1400)
     assert page.locator('iframe').count()==13
