@@ -33,14 +33,28 @@ class LiveUpdateChecks(unittest.TestCase):
         import json
         app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=30).run()
         self.assertFalse(app.exception)
-        self.assertEqual(app.title[0].value, 'The rise of minor parties and independents in Victorian elections')
+        self.assertEqual(app.title[0].value, 'The rise of minor parties / independents in Victorian elections')
         contexts = json.loads((ROOT / 'data/election_context.json').read_text())
         self.assertEqual([len(section['years']) for section in contexts], [3, 3, 3, 3])
         self.assertEqual([year for section in contexts for year in section['years']], sorted(pd.read_csv(ROOT / 'data/first_preferences.csv').election_year.unique().tolist()))
         markdown = '\n'.join(element.value for element in app.markdown)
-        self.assertIn('A ternary chart shows three shares that add to 100%', markdown)
+        self.assertIn('Each election is represented using a ternary chart, this is a chart that shows three shares that add to 100%', markdown)
         self.assertIn('A two-party chart hides votes outside the major blocs', markdown)
         self.assertNotIn('Sources:', markdown)
+
+    def test_electorate_dropdown_persists_across_elections(self):
+        import json
+        app=AppTest.from_file(str(ROOT/'app.py'),default_timeout=30).run()
+        app.selectbox(key='highlight_electorate').set_value('Northcote').run()
+        self.assertFalse(app.exception)
+        for component in app.get('component_instance'):
+            option=json.loads(component.proto.json_args)['options']
+            points=[p for s in option['series'] if s['name'] in ['Labor','Liberal–National','minor parties / independents'] for p in s['data']]
+            selected=[p for p in points if p['value'][9]]
+            expected=[p for p in points if p['name']=='Northcote']
+            self.assertEqual(selected,expected)
+        app.selectbox(key='highlight_electorate').set_value(None).run()
+        self.assertFalse(app.exception)
 
     def test_same_session_loads_changed_chart_source_and_csv(self):
         with tempfile.TemporaryDirectory() as directory:

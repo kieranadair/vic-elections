@@ -44,12 +44,32 @@ with sync_playwright() as playwright:
     seat = pd.read_csv(ROOT/'data/first_preferences.csv').query('election_year==2022 and electorate=="Northcote"').iloc[0]
     box = frame.bounding_box()
     h = math.sqrt(3)/2
-    side = min(box['width']-48, (box['height']-104)/h)
+    side = min(box['width']-48, (box['height']-134)/h)
     x = (box['width']-side)/2 + side*(seat.coalition_pct+seat.other_pct/2)/100
-    y = 32 + side*h*(1-seat.other_pct/100)
+    y = 54 + side*h*(1-seat.other_pct/100)
     page.mouse.move(box['x']+x, box['y']+y)
     page.wait_for_timeout(400)
     frame.screenshot(path=str(ROOT/'screenshots/ternary-hover-story.png'))
+    # A selected seat keeps its guides after the pointer leaves the chart.
+    selector=page.get_by_role('combobox')
+    selector.click()
+    selector.fill('Northcote')
+    page.get_by_role('option',name='Northcote',exact=True).click()
+    page.wait_for_timeout(1300)
+    print('Selected input:',selector.input_value(),'selectbox text:',page.get_by_test_id('stSelectbox').inner_text())
+    assert selector.input_value()=='Northcote' or 'Northcote' in page.get_by_test_id('stSelectbox').inner_text()
+    page.mouse.move(5,5)
+    page.locator('iframe').nth(11).screenshot(path=str(ROOT/'screenshots/electorate-highlight-2022.png'))
+    page.get_by_role('heading',name='The rise of minor parties / independents in Victorian elections',exact=True).scroll_into_view_if_needed()
+    page.get_by_role('button',name='Reading the charts').click()
+    page.wait_for_timeout(1400)
+    assert page.locator('iframe').count()==13
+    assert page.get_by_text('Dummy data:',exact=False).count()==1
+    example=page.get_by_test_id('stPopoverBody').locator('iframe')
+    example.screenshot(path=str(ROOT/'screenshots/ternary-explainer-example.png'))
+    page.screenshot(path=str(ROOT/'screenshots/chart-guide.png'))
+    page.get_by_role('button',name='Reading the charts').click()
+    page.wait_for_timeout(600)
     # The gallery also wraps without horizontal overflow on phones.
     page.set_viewport_size({'width':390,'height':844})
     page.wait_for_timeout(500)

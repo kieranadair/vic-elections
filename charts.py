@@ -13,96 +13,109 @@ def common():
 # Shared pixel transform keeps x/y scales identical at every component size.
 TERNARY_GEOMETRY_JS = """
 var height = Math.sqrt(3) / 2;
-var side = Math.min(api.getWidth() - 48, (api.getHeight() - 104) / height);
+var side = Math.min(api.getWidth() - 48, (api.getHeight() - 134) / height);
 var left = (api.getWidth() - side) / 2;
-var top = 32;
+var top = 54;
 var bottom = top + side * height;
 function point(x, y) { return [left + side * x, bottom - side * y]; }
 """
 
-WINNER_COLORS = {'Labor': '#cc4359', 'Liberal–National': '#377db8', 'Minor parties and Independents': '#50555a'}
+MINOR_LABEL = 'minor parties / independents'
+CHART_HEIGHT = 350
+WINNER_COLORS = {'Labor': '#cc4359', 'Liberal–National': '#377db8', MINOR_LABEL: '#50555a'}
+WINNER_KEYS = {'Labor': 'Labor', 'Liberal–National': 'Coalition', MINOR_LABEL: 'Other'}
 
 
-def ternary_options(df, year):
- """First-preference positions, coloured by the elected party after preferences."""
- background = JsCode("""function(params, api) {
- GEOMETRY
- var h = Math.sqrt(3) / 2;
- var L = point(0, 0), C = point(1, 0), O = point(.5, h);
- var LC = point(.5, 0), LO = point(.25, h/2), CO = point(.75, h/2);
- var centre = point(.5, h/3);
- function region(points, color, x, y, x2, y2) {
-  return {type:'polygon',shape:{points:points},style:{fill:{
-   type:'linear',x:x,y:y,x2:x2,y2:y2,
-   colorStops:[{offset:0,color:color},{offset:1,color:'#fafafa'}],global:false
-  }}};
- }
- function line(a,b,color,width) { return {type:'line',shape:{x1:a[0],y1:a[1],x2:b[0],y2:b[1]},style:{stroke:color||'#c7cbd0',lineWidth:width||.8}}; }
- function text(x,y,label,color,align) { return {type:'text',style:{x:x,y:y,text:label,fill:color,font:'12px sans-serif',align:align,verticalAlign:'middle'}}; }
- var children = [
-  region([L, LC, centre, LO], '#efb0ba', 0,1,1,0),
-  region([C, CO, centre, LC], '#a9c4e7', 1,1,0,0),
-  region([O, LO, centre, CO], '#c2c5c9', .5,0,.5,1),
-  {type:'polygon',name:'triangle-outline',shape:{points:[L,C,O]},style:{fill:'none',stroke:'#bec3ca',lineWidth:.8}}
- ];
- [.2,.4,.6,.8].forEach(function(v) {
-  children.push(line(point(1-v,0),point((1-v)/2,h*(1-v)),'#cbd0d6',.6));
-  children.push(line(point(v,0),point((1+v)/2,h*(1-v)),'#cbd0d6',.6));
-  children.push(line(point(v/2,h*v),point(1-v/2,h*v),'#cbd0d6',.6));
-  var labor=point(1-v,0),coalition=point((1+v)/2,h*(1-v)),other=point(v/2,h*v);
-  [[labor,[0,4]],[coalition,[3.46,-2]],[other,[-3.46,-2]]].forEach(function(tick) {
-   var a=tick[0],offset=tick[1],mark=line(a,[a[0]+offset[0],a[1]+offset[1]],'#8c949f',.8);
-   mark.name='axis-tick';children.push(mark);
-  });
- });
- children.push(line(LC,centre),line(LO,centre),line(CO,centre),
-  text(O[0],O[1]-23,'100% Minor parties and Independents','#51565e','center'),
-  text(L[0],L[1]+28,'100% Labor','#bd344e','left'),
-  text(C[0],C[1]+28,'100% Coalition','#2b68af','right'));
- return {type:'group',children:children};
-}""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
- render = JsCode("""function(params, api) {
- GEOMETRY
- var p=point(api.value(0),api.value(1)),r=2.8;
- var labor=api.value(2)/100,coalition=api.value(3)/100,other=api.value(4)/100;
- var ends=[point(1-labor,0),point((1+coalition)/2,height*(1-coalition)),point(other/2,height*other)];
- var color=api.visual('color');
- function guide(end,axis) {
-  return {type:'line',name:axis+'-reference',silent:true,
-   shape:{x1:p[0],y1:p[1],x2:end[0],y2:end[1]},
-   style:{stroke:'#626c79',lineWidth:1,opacity:0},emphasis:{style:{opacity:1}},z2:20};
- }
- function label(x,y,txt,align,name) {
-  return {type:'text',name:name,silent:true,
-   style:{x:x,y:y,text:txt,fill:'#303b49',font:'11px sans-serif',align:align,verticalAlign:'middle',
-    backgroundColor:'rgba(255,255,255,.95)',padding:[2,3],borderRadius:2,opacity:0},
-   emphasis:{style:{opacity:1}},z2:30};
- }
- var right=ends[1],leftEnd=ends[2];
- var labels=[
-  label(Math.max(62,Math.min(api.getWidth()-62,ends[0][0])),bottom+16,'Labor '+api.value(2).toFixed(1)+'%','center','labor-result'),
-  label(right[0]+(right[0]<api.getWidth()-130?8:-8),right[1], 'Coalition '+api.value(3).toFixed(1)+'%',right[0]<api.getWidth()-130?'left':'right','coalition-result'),
-  label(Math.max(100,Math.min(api.getWidth()-100,leftEnd[0])),leftEnd[1]+16, 'Minor parties and Independents\\n'+api.value(4).toFixed(1)+'%','center','other-result')
- ];
- return {type:'group',children:[
-  {type:'circle',name:api.value(6),shape:{cx:p[0],cy:p[1],r:r},style:{fill:color,opacity:.8},
-   emphasis:{style:{fill:color,opacity:.8,stroke:'#344051',lineWidth:1}},z2:10},
-  guide(ends[0],'labor'),guide(ends[1],'coalition'),guide(ends[2],'other'),
-  labels[0],labels[1],labels[2],
-  label(Math.max(100,Math.min(api.getWidth()-100,p[0])),p[1]-16,api.value(6)+(api.value(5)?' *':''),'center','seat-name')
- ]};
-}""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
- series=[dict(type='custom',name='Dominance regions',coordinateSystem='none',renderItem=background,data=[0],silent=True,z=0,tooltip=dict(show=False))]
- sub=df[df.election_year==year]
- for group,color in WINNER_COLORS.items():
-  data=[]
-  for _,r in sub[sub.winner_group=={'Labor':'Labor','Liberal–National':'Coalition','Minor parties and Independents':'Other'}[group]].iterrows():
-   vals=[float(r[x+'_pct']) for x in ['labor','coalition','other']]
-   x,y=ternary_xy(*vals)
-   quality='Source totals differ; shares normalised to candidate sum' if not bool(r.get('reconciles',True)) else ''
-   data.append(dict(name=r.electorate,value=[x,y,*vals,quality,r.electorate,r.winner_party,r.winner]))
-  series.append(dict(type='custom',name=group,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color=color),emphasis=dict(focus='none'),z=3))
- return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left='center',bottom=2,padding=0,textStyle=dict(color='#252b33',fontSize=19,fontWeight=500)),tooltip=dict(show=False),series=series)
+def election_summary(df, year):
+    """Statewide seat shares and vote-weighted first preferences, in legend order."""
+    seats = df[df.election_year == year]
+    total_seats = len(seats)
+    counts = [int((seats.winner_group == key).sum()) for key in WINNER_KEYS.values()]
+    votes = [int(seats[key + '_votes'].sum()) for key in ['labor', 'coalition', 'other']]
+    total_votes = sum(votes)
+    return {
+        'seat_shares': [100 * count / total_seats if total_seats else 0 for count in counts],
+        'vote_shares': [100 * count / total_votes if total_votes else 0 for count in votes],
+    }
+
+
+def ternary_options(df, year, highlight=None, summary_df=None, show_summary=True):
+    """First-choice positions, winner colours, optional persistent seat guides."""
+    background = JsCode("""function(params, api) {
+    GEOMETRY
+    var h = Math.sqrt(3) / 2;
+    var L=point(0,0),C=point(1,0),O=point(.5,h);
+    var LC=point(.5,0),LO=point(.25,h/2),CO=point(.75,h/2),centre=point(.5,h/3);
+    function region(points,color,x,y,x2,y2) {
+      return {type:'polygon',shape:{points:points},style:{fill:{type:'linear',x:x,y:y,x2:x2,y2:y2,
+      colorStops:[{offset:0,color:color},{offset:1,color:'#fafafa'}],global:false}}};
+    }
+    function line(a,b,color,width) {return {type:'line',shape:{x1:a[0],y1:a[1],x2:b[0],y2:b[1]},style:{stroke:color||'#c7cbd0',lineWidth:width||.8}};}
+    function text(x,y,label,color,align) {return {type:'text',style:{x:x,y:y,text:label,fill:color,font:'12px sans-serif',align:align,verticalAlign:'middle'}};}
+    var children=[region([L,LC,centre,LO],'#efb0ba',0,1,1,0),region([C,CO,centre,LC],'#a9c4e7',1,1,0,0),region([O,LO,centre,CO],'#c2c5c9',.5,0,.5,1),
+      {type:'polygon',name:'triangle-outline',shape:{points:[L,C,O]},style:{fill:'none',stroke:'#bec3ca',lineWidth:.8}}];
+    [.2,.4,.6,.8].forEach(function(v) {
+      children.push(line(point(1-v,0),point((1-v)/2,h*(1-v)),'#cbd0d6',.6),line(point(v,0),point((1+v)/2,h*(1-v)),'#cbd0d6',.6),line(point(v/2,h*v),point(1-v/2,h*v),'#cbd0d6',.6));
+      var labor=point(1-v,0),coalition=point((1+v)/2,h*(1-v)),other=point(v/2,h*v);
+      [[labor,[0,4]],[coalition,[3.46,-2]],[other,[-3.46,-2]]].forEach(function(tick) {
+        var a=tick[0],offset=tick[1],mark=line(a,[a[0]+offset[0],a[1]+offset[1]],'#8c949f',.8);mark.name='axis-tick';children.push(mark);
+      });
+    });
+    children.push(line(LC,centre),line(LO,centre),line(CO,centre),text(O[0],O[1]-23,'minor parties / independents','#51565e','center'),text(L[0],L[1]+28,'Labor','#bd344e','left'),text(C[0],C[1]+28,'Liberal–National','#2b68af','right'));
+    return {type:'group',children:children};
+    }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
+    render = JsCode("""function(params, api) {
+    GEOMETRY
+    var p=point(api.value(0),api.value(1)),selected=!!api.value(9),tracking=!!api.value(10),r=selected?4.4:2.8;
+    var normal=selected?1:0,hover=(!tracking||selected)?1:0;
+    var labor=api.value(2)/100,coalition=api.value(3)/100,other=api.value(4)/100;
+    var ends=[point(1-labor,0),point((1+coalition)/2,height*(1-coalition)),point(other/2,height*other)],color=api.visual('color');
+    function guide(end,axis) {return {type:'line',name:axis+'-reference',silent:true,shape:{x1:p[0],y1:p[1],x2:end[0],y2:end[1]},style:{stroke:'#626c79',lineWidth:1,opacity:normal},emphasis:{style:{opacity:hover}},z2:selected?40:20};}
+    function label(x,y,txt,align,name) {return {type:'text',name:name,silent:true,style:{x:x,y:y,text:txt,fill:'#303b49',font:'11px sans-serif',align:align,verticalAlign:'middle',backgroundColor:'rgba(255,255,255,.95)',padding:[2,3],borderRadius:2,opacity:normal},emphasis:{style:{opacity:hover}},z2:selected?60:30};}
+    var right=ends[1],leftEnd=ends[2];
+    return {type:'group',children:[
+      {type:'circle',name:api.value(6),shape:{cx:p[0],cy:p[1],r:r},style:{fill:color,opacity:.8,stroke:selected?'#26313b':'none',lineWidth:selected?2:0},emphasis:{style:{fill:color,opacity:.8,stroke:'#344051',lineWidth:1}},z2:selected?50:10},
+      guide(ends[0],'labor'),guide(ends[1],'coalition'),guide(ends[2],'other'),
+      label(Math.max(62,Math.min(api.getWidth()-62,ends[0][0])),bottom+16,'Labor '+api.value(2).toFixed(0)+'%','center','labor-result'),
+      label(right[0]+(right[0]<api.getWidth()-130?8:-8),right[1],'Liberal–National '+api.value(3).toFixed(0)+'%',right[0]<api.getWidth()-130?'left':'right','coalition-result'),
+      label(Math.max(100,Math.min(api.getWidth()-100,leftEnd[0])),leftEnd[1]+16,'minor parties / independents\\n'+api.value(4).toFixed(0)+'%','center','other-result'),
+      label(Math.max(100,Math.min(api.getWidth()-100,p[0])),p[1]-16,api.value(6)+(api.value(5)?' *':''),'center','seat-name')
+    ]};
+    }""".replace('GEOMETRY', TERNARY_GEOMETRY_JS).replace('\n', ' ')).js_code
+    series = [dict(type='custom',name='Dominance regions',coordinateSystem='none',renderItem=background,data=[0],silent=True,z=0,tooltip=dict(show=False))]
+    sub = df[df.election_year == year]
+    for group, color in WINNER_COLORS.items():
+        data = []
+        for _, row in sub[sub.winner_group == WINNER_KEYS[group]].iterrows():
+            values = [float(row[key + '_pct']) for key in ['labor', 'coalition', 'other']]
+            x, y = ternary_xy(*values)
+            quality = 'Source totals differ; shares normalised to candidate sum' if not bool(row.get('reconciles', True)) else ''
+            data.append(dict(name=row.electorate,value=[x,y,*values,quality,row.electorate,row.winner_party,row.winner,int(row.electorate==highlight),int(bool(highlight))]))
+        series.append(dict(type='custom',name=group,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color=color),emphasis=dict(focus='none'),z=3))
+    if show_summary:
+        summary = election_summary(df if summary_df is None else summary_df, year)
+        for index, (name, shares) in enumerate([('Seats won', summary['seat_shares']), ('First-preference vote', summary['vote_shares'])]):
+            bar = JsCode("""function(params,api) {
+            GEOMETRY
+            var y=api.getHeight()-25+ROW*11,offset=0,colors=PALETTE,children=[];
+            for(var i=0;i<3;i++){var width=side*api.value(i)/100;children.push({type:'rect',name:'segment-'+i,shape:{x:left+offset,y:y,width:width,height:4},style:{fill:colors[i]}});offset+=width;}
+            return {type:'group',children:children};
+            }""".replace('GEOMETRY',TERNARY_GEOMETRY_JS).replace('ROW',str(index)).replace('PALETTE',repr(list(WINNER_COLORS.values()))).replace('\n',' ')).js_code
+            series.append(dict(type='custom',name=name,coordinateSystem='none',renderItem=bar,data=[shares],silent=True,z=1,tooltip=dict(show=False)))
+    options = dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left='center',top=4,padding=0,textStyle=dict(color='#252b33',fontSize=19,fontWeight=500)),tooltip=dict(show=False),series=series)
+    if highlight and not (sub.electorate == highlight).any():
+        options['graphic'] = [dict(type='text',left='center',top=305,style=dict(text='No displayed result under this name',fill='#68727e',font='10px sans-serif'))]
+    return options
+
+
+def example_options():
+    """Clearly fictional, permanently annotated 40/35/25 example for the guide."""
+    import pandas as pd
+    dummy = pd.DataFrame([dict(election_year=0,electorate='Example seat',labor_pct=40.,coalition_pct=35.,other_pct=25.,winner_group='Labor',winner_party='Labor',winner='Illustration',reconciles=True)])
+    options = ternary_options(dummy,0,highlight='Example seat',show_summary=False)
+    options['title']['text'] = 'Illustrative example'
+    options['title']['textStyle']['fontSize'] = 15
+    return options
 
 def windsock_rows(final,centres,focus,basis,half=False):
  d=final.merge(centres,on='electorate',how='inner',validate='many_to_one');tag='tpp' if basis=='Labor–Coalition 2PP' else 'tcp';g=focus.lower()
