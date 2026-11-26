@@ -55,6 +55,8 @@ Three lines show first-preference shares for each election. Victoria overall is 
 
 The explorer sits directly below the gallery in a matching four-track grid: its heading, dropdown and explanation occupy the left track, and the 380px-high line chart spans the other three. The chart title is inside the plot component, so the whole explorer stays one chart row tall. One data note at the bottom covers coverage, vote weighting, flagged historical totals and changing seat boundaries.
 
+The line chart's horizontal insets follow the outer triangle edges: the y-axis labels begin at the first triangle, and the plot ends at the last triangle. Repeated party labels at the line ends are omitted; the shared colour legend and hover details identify the groups.
+
 In a selected seat, **filled circles** identify the group that won after preferences; the other groups have **hollow circles**. Circle size and party colours stay consistent. Tooltips show whole-percentage shares and the actual winning party. Statewide markers remain hollow because this view has no individual electorate winner. See [the design research](research/chart-design.md) for the guidance informing these choices.
 
 ![Northcote primary-vote trend with filled Labor winner markers](screenshots/explore-northcote.png)

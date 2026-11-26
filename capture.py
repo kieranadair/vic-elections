@@ -78,7 +78,9 @@ with sync_playwright() as playwright:
     page.screenshot(path=str(ROOT/'screenshots/explore-northcote.png'))
     canvas=page.get_by_test_id('stEChartsChart').locator('canvas').first
     trend_box=canvas.bounding_box()
-    page.mouse.move(trend_box['x']+trend_box['width']-166,trend_box['y']+40+(trend_box['height']-84)*(1-seat.labor_pct/100))
+    track=(trend_box['width']-16)/3
+    inset=max(24,(track-(380-164)/(math.sqrt(3)/2))/2)
+    page.mouse.move(trend_box['x']+trend_box['width']-inset-1,trend_box['y']+40+(trend_box['height']-84)*(1-seat.labor_pct/100))
     page.wait_for_timeout(400)
     assert page.get_by_text('Elected: Labor',exact=False).is_visible()
     assert page.get_by_text('Labor: 41%',exact=False).is_visible()

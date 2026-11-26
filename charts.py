@@ -163,8 +163,7 @@ def primary_trend_options(df, electorate=None):
             showSymbol=True,symbol='circle',symbolSize=8,connectNulls=False,
             lineStyle=dict(color=color,width=2.4),
             itemStyle=dict(color='#ffffff',borderColor=color,borderWidth=2),
-            endLabel=dict(show=True,formatter=group.replace(' / ', ' /\n'),color=color,fontSize=12,lineHeight=17,distance=12),
-            labelLayout=dict(moveOverlap='shiftY'),emphasis=dict(focus='none',scale=False),z=3,
+            endLabel=dict(show=False),emphasis=dict(focus='none',scale=False),z=3,
         ))
         if electorate:
             series.append(dict(
@@ -174,11 +173,21 @@ def primary_trend_options(df, electorate=None):
                 silent=True,tooltip=dict(show=False),z=4,
             ))
     tooltip = '<strong>{@Year}</strong><br/>Labor: {@Labor label}<br/>Liberal–National: {@Liberal–National label}<br/>Minor Parties / Independents: {@Minor Parties / Independents label}<br/>{@Outcome}'
+    # Match the outer triangles, including the y-axis labels in the left inset.
+    # Three chart tracks contain two 8px gaps. Native media rules approximate
+    # their responsive inset to within half a pixel across the bounded page.
+    triangle_side = (CHART_HEIGHT - 164) / (math.sqrt(3) / 2)
+    media = []
+    for width in range(908, 1214, 6):
+        inset = max(24, (width + 3 - 16) / 6 - triangle_side / 2)
+        media.append(dict(query=dict(minWidth=width,maxWidth=width+6),option=dict(grid=dict(left=inset,right=inset))))
+    # ECharts needs a default media option to reset padding after narrowing.
+    media.append(dict(option=dict(grid=dict(left=24,right=24))))
     return dict(
         animation=False,backgroundColor='#ffffff',textStyle=dict(fontFamily='Inter, sans-serif'),
-        title=dict(text=f'{electorate or "Victoria overall"} · first-preference vote, 1982–2022',left=48,top=4,padding=0,textStyle=dict(color='#252b33',fontSize=14,fontWeight=500)),
+        title=dict(text=f'{electorate or "Victoria overall"} · first-preference vote, 1982–2022',left=48,top=4,padding=0,textAlign='left',textStyle=dict(color='#252b33',fontSize=14,fontWeight=500)),
         dataset=dict(source=primary_trend_data(df,electorate)),
-        grid=dict(left=48,right=165,top=40,bottom=44),
+        grid=dict(left=24,right=24,top=40,bottom=24,containLabel=True),media=media,
         xAxis=dict(type='time',min='1982-01-01',max='2022-01-01',splitNumber=8,axisLabel=dict(formatter='{yyyy}',color='#51565e',showMinLabel=True,showMaxLabel=True,hideOverlap=True),axisLine=dict(lineStyle=dict(color='#c7cbd0')),axisTick=dict(show=False),splitLine=dict(show=False)),
         yAxis=dict(type='value',min=0,max=100,interval=20,axisLabel=dict(formatter='{value}%',color='#51565e'),axisLine=dict(show=False),axisTick=dict(show=False),splitLine=dict(lineStyle=dict(color='#e9ecef'))),
         tooltip=dict(trigger='axis',confine=True,formatter=tooltip,axisPointer=dict(type='line',lineStyle=dict(color='#aeb5bd',type='dashed'))),
