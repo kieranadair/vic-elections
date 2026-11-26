@@ -39,7 +39,10 @@ class LiveUpdateChecks(unittest.TestCase):
         self.assertEqual([year for section in contexts for year in section['years']], sorted(pd.read_csv(ROOT / 'data/first_preferences.csv').election_year.unique().tolist()))
         markdown = '\n'.join(element.value for element in app.markdown)
         self.assertIn('Each election is represented using a ternary chart, this is a chart that shows three shares that add to 100%', markdown)
-        self.assertIn('A two-party chart hides votes outside the major blocs', markdown)
+        self.assertIn('100% stacked bars', markdown)
+        self.assertIn('summed vote counts', markdown)
+        self.assertFalse(app.info)
+        self.assertEqual(app.header[0].value, 'Explore Your Electorate')
         self.assertNotIn('Sources:', markdown)
 
     def test_electorate_dropdown_persists_across_elections(self):

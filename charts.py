@@ -124,6 +124,67 @@ def bar_legend_options():
     return dict(animation=False,backgroundColor='#ffffff',dataset=dict(source=data),grid=dict(left=65,right=8,top=20,bottom=4),xAxis=dict(type='value',min=0,max=100,show=False),yAxis=dict(type='category',inverse=True,axisTick=dict(show=False),axisLine=dict(show=False),axisLabel=dict(fontSize=12,color='#26313b')),tooltip=dict(show=False),series=series)
 
 
+def primary_trend_data(df, electorate=None):
+    """Vote-weighted statewide shares, or a named seat with genuine data gaps."""
+    import pandas as pd
+    records = []
+    for year in sorted(df.election_year.unique()):
+        seats = df[df.election_year == year]
+        if electorate:
+            seats = seats[seats.electorate == electorate]
+        record = {'Year': int(year), 'Election date': pd.Timestamp(year=int(year),month=1,day=1)}
+        if electorate and not seats.empty:
+            seat = seats.iloc[0]
+            shares = [float(seat[key + '_pct']) for key in ['labor', 'coalition', 'other']]
+            winner = seat.winner_group
+            record['Outcome'] = 'Elected: ' + seat.winner_party
+        elif not electorate:
+            shares = election_summary(df, year)['vote_shares']
+            winner = None
+            record['Outcome'] = 'Statewide first-preference votes'
+        else:
+            shares = [None, None, None]
+            winner = None
+            record['Outcome'] = 'No result under this electorate name'
+        for (group, key), share in zip(WINNER_KEYS.items(), shares):
+            record[group] = share
+            record[group + ' label'] = f'{share:.0f}%' if share is not None else '—'
+            record[group + ' winner'] = share if winner == key else None
+        records.append(record)
+    return pd.DataFrame(records)
+
+
+def primary_trend_options(df, electorate=None):
+    """Three vote-share lines; equal-sized filled markers encode seat winners."""
+    series = []
+    for group, color in WINNER_COLORS.items():
+        series.append(dict(
+            type='line',name=group,encode=dict(x='Election date',y=group),
+            showSymbol=True,symbol='circle',symbolSize=8,connectNulls=False,
+            lineStyle=dict(color=color,width=2.4),
+            itemStyle=dict(color='#ffffff',borderColor=color,borderWidth=2),
+            endLabel=dict(show=True,formatter=group.replace(' / ', ' /\n'),color=color,fontSize=12,lineHeight=17,distance=12),
+            labelLayout=dict(moveOverlap='shiftY'),emphasis=dict(focus='none',scale=False),z=3,
+        ))
+        if electorate:
+            series.append(dict(
+                type='scatter',name=group+' · elected',
+                encode=dict(x='Election date',y=group+' winner'),symbol='circle',symbolSize=8,
+                itemStyle=dict(color=color,borderColor=color,borderWidth=2,opacity=1),
+                silent=True,tooltip=dict(show=False),z=4,
+            ))
+    tooltip = '<strong>{@Year}</strong><br/>Labor: {@Labor label}<br/>Liberal–National: {@Liberal–National label}<br/>Minor Parties / Independents: {@Minor Parties / Independents label}<br/>{@Outcome}'
+    return dict(
+        animation=False,backgroundColor='#ffffff',textStyle=dict(fontFamily='Inter, sans-serif'),
+        dataset=dict(source=primary_trend_data(df,electorate)),
+        grid=dict(left=48,right=165,top=20,bottom=44),
+        xAxis=dict(type='time',min='1982-01-01',max='2022-01-01',splitNumber=8,axisLabel=dict(formatter='{yyyy}',color='#51565e',showMinLabel=True,showMaxLabel=True,hideOverlap=True),axisLine=dict(lineStyle=dict(color='#c7cbd0')),axisTick=dict(show=False),splitLine=dict(show=False)),
+        yAxis=dict(type='value',min=0,max=100,interval=20,axisLabel=dict(formatter='{value}%',color='#51565e'),axisLine=dict(show=False),axisTick=dict(show=False),splitLine=dict(lineStyle=dict(color='#e9ecef'))),
+        tooltip=dict(trigger='axis',confine=True,formatter=tooltip,axisPointer=dict(type='line',lineStyle=dict(color='#aeb5bd',type='dashed'))),
+        series=series,
+    )
+
+
 def example_options():
     """Clearly fictional, permanently annotated 40/35/25 example for the guide."""
     import pandas as pd

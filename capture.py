@@ -23,7 +23,7 @@ with sync_playwright() as playwright:
     for width in [1440, 1366]:
         page.set_viewport_size({'width': width, 'height': 1000})
         page.wait_for_timeout(1000)
-        page.get_by_text('1982–2022',exact=True).scroll_into_view_if_needed()
+        page.get_by_role('heading',level=1).scroll_into_view_if_needed()
         boxes = [frame.bounding_box() for frame in page.locator('iframe').all()]
         for index in [0, 3, 6, 9]:
             assert max(box['y'] for box in boxes[index:index+3]) - min(box['y'] for box in boxes[index:index+3]) < 2
@@ -52,6 +52,10 @@ with sync_playwright() as playwright:
     page.mouse.move(box['x']+x, box['y']+y)
     page.wait_for_timeout(400)
     frame.screenshot(path=str(ROOT/'screenshots/ternary-hover-story.png'))
+    page.get_by_role('heading',name='Explore Your Electorate',exact=True).scroll_into_view_if_needed()
+    page.get_by_role('heading',name='Explore Your Electorate',exact=True).evaluate("el=>el.scrollIntoView({block:'start'})")
+    page.wait_for_timeout(500)
+    page.screenshot(path=str(ROOT/'screenshots/explore-statewide.png'))
     # A selected seat keeps its guides after the pointer leaves the chart.
     selector=page.get_by_role('combobox')
     selector.click()
@@ -60,17 +64,27 @@ with sync_playwright() as playwright:
     page.wait_for_timeout(1300)
     print('Selected input:',selector.input_value(),'selectbox text:',page.get_by_test_id('stSelectbox').inner_text())
     assert selector.input_value()=='Northcote' or 'Northcote' in page.get_by_test_id('stSelectbox').inner_text()
+    page.get_by_role('heading',name='Explore Your Electorate',exact=True).evaluate("el=>el.scrollIntoView({block:'start'})")
+    page.screenshot(path=str(ROOT/'screenshots/explore-northcote.png'))
+    canvas=page.get_by_test_id('stEChartsChart').locator('canvas').first
+    trend_box=canvas.bounding_box()
+    page.mouse.move(trend_box['x']+trend_box['width']-166,trend_box['y']+20+(trend_box['height']-64)*(1-seat.labor_pct/100))
+    page.wait_for_timeout(400)
+    assert page.get_by_text('Elected: Labor',exact=False).is_visible()
+    assert page.get_by_text('Labor: 41%',exact=False).is_visible()
+    page.screenshot(path=str(ROOT/'screenshots/explore-northcote-hover.png'))
     page.mouse.move(5,5)
     page.locator('iframe').nth(11).screenshot(path=str(ROOT/'screenshots/electorate-highlight-2022.png'))
     page.get_by_role('heading',level=1).scroll_into_view_if_needed()
-    page.get_by_role('button',name='Reading the charts').click()
+    page.get_by_text('Reading the charts',exact=True).click()
     page.wait_for_timeout(1400)
     assert page.locator('iframe').count()==13
-    assert page.get_by_text('Dummy data:',exact=False).count()==1
-    example=page.get_by_test_id('stPopoverBody').locator('iframe')
+    assert page.get_by_text('Dummy data:',exact=False).count()==2
+    example=page.get_by_test_id('stExpander').locator('iframe')
     example.screenshot(path=str(ROOT/'screenshots/ternary-explainer-example.png'))
     page.screenshot(path=str(ROOT/'screenshots/chart-guide.png'))
-    page.get_by_role('button',name='Reading the charts').click()
+    page.get_by_test_id('stExpander').screenshot(path=str(ROOT/'screenshots/chart-guide.png'))
+    page.get_by_text('Reading the charts',exact=True).click()
     page.wait_for_timeout(600)
     # The gallery also wraps without horizontal overflow on phones.
     page.set_viewport_size({'width':390,'height':844})
