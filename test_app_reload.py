@@ -25,9 +25,22 @@ class LiveUpdateChecks(unittest.TestCase):
         with patch.dict(sys.modules, {'charts': stale}):
             app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=30).run()
             self.assertFalse(app.exception, [e.message for e in app.exception])
-            self.assertEqual(len(app.subheader), 3)
+            self.assertEqual(len(app.subheader), 4)
             self.assertFalse(app.tabs)
             self.assertIs(sys.modules['charts'], stale)
+
+    def test_story_periods_and_chart_guide(self):
+        import json
+        app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=30).run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.title[0].value, 'The rise of minor parties and independents in Victorian elections')
+        contexts = json.loads((ROOT / 'data/election_context.json').read_text())
+        self.assertEqual([len(section['years']) for section in contexts], [3, 3, 3, 3])
+        self.assertEqual([year for section in contexts for year in section['years']], sorted(pd.read_csv(ROOT / 'data/first_preferences.csv').election_year.unique().tolist()))
+        markdown = '\n'.join(element.value for element in app.markdown)
+        self.assertIn('A ternary chart shows three shares that add to 100%', markdown)
+        self.assertIn('A two-party chart hides votes outside the major blocs', markdown)
+        self.assertNotIn('Sources:', markdown)
 
     def test_same_session_loads_changed_chart_source_and_csv(self):
         with tempfile.TemporaryDirectory() as directory:

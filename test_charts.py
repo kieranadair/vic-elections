@@ -12,6 +12,7 @@ class ChartChecks(unittest.TestCase):
  def test_static_ternary_contract(self):
   d=pd.read_csv(D/'first_preferences.csv');options=ternary_options(d,2022)
   self.assertFalse(options['animation']);self.assertNotIn('timeline',options)
+  self.assertEqual(options['title']['left'],'center');self.assertIn('bottom',options['title']);self.assertNotIn('top',options['title'])
   self.assertEqual(sum(len(s['data']) for s in options['series'][1:]),88)
   # The component's JS callback decoder cannot read multiline functions.
   for series in options['series']:self.assertNotIn('\n',series['renderItem'])
@@ -41,18 +42,18 @@ class ChartChecks(unittest.TestCase):
   self.assertIn('Northcote',[p['name'] for p in labor['data']])
   # The 2014 Prahran winner was Greens, although Coalition led on primaries.
   options=ternary_options(d,2014)
-  greens=next(s for s in options['series'] if s['name']=='Other')
+  greens=next(s for s in options['series'] if s['name']=='Minor parties and Independents')
   self.assertIn('Prahran',[p['name'] for p in greens['data']])
-  self.assertEqual(greens['itemStyle']['color'],WINNER_COLORS['Other'])
+  self.assertEqual(greens['itemStyle']['color'],WINNER_COLORS['Minor parties and Independents'])
  def test_three_winner_groups_cover_every_seat(self):
   from charts import WINNER_COLORS
   d=pd.read_csv(D/'first_preferences.csv')
-  self.assertEqual(list(WINNER_COLORS),['Labor','Liberal–National','Other'])
+  self.assertEqual(list(WINNER_COLORS),['Labor','Liberal–National','Minor parties and Independents'])
   for year in d.election_year.unique():
    series=ternary_options(d,year)['series'][1:]
    self.assertEqual(sum(len(s['data']) for s in series),len(d[d.election_year==year]))
   counts={s['name']:len(s['data']) for s in ternary_options(d,2022)['series'][1:]}
-  self.assertEqual(counts,{'Labor':56,'Liberal–National':28,'Other':4})
+  self.assertEqual(counts,{'Labor':56,'Liberal–National':28,'Minor parties and Independents':4})
  def test_hover_guides_and_axis_ticks(self):
   import subprocess,shutil,json
   if not shutil.which('node'):self.skipTest('Node is needed to execute the chart renderer')

@@ -15,12 +15,12 @@ TERNARY_GEOMETRY_JS = """
 var height = Math.sqrt(3) / 2;
 var side = Math.min(api.getWidth() - 48, (api.getHeight() - 104) / height);
 var left = (api.getWidth() - side) / 2;
-var top = 54;
+var top = 32;
 var bottom = top + side * height;
 function point(x, y) { return [left + side * x, bottom - side * y]; }
 """
 
-WINNER_COLORS = {'Labor': '#cc4359', 'Liberal–National': '#377db8', 'Other': '#50555a'}
+WINNER_COLORS = {'Labor': '#cc4359', 'Liberal–National': '#377db8', 'Minor parties and Independents': '#50555a'}
 
 
 def ternary_options(df, year):
@@ -56,7 +56,7 @@ def ternary_options(df, year):
   });
  });
  children.push(line(LC,centre),line(LO,centre),line(CO,centre),
-  text(O[0],O[1]-23,'100% Other','#51565e','center'),
+  text(O[0],O[1]-23,'100% Minor parties and Independents','#51565e','center'),
   text(L[0],L[1]+28,'100% Labor','#bd344e','left'),
   text(C[0],C[1]+28,'100% Coalition','#2b68af','right'));
  return {type:'group',children:children};
@@ -82,7 +82,7 @@ def ternary_options(df, year):
  var labels=[
   label(Math.max(62,Math.min(api.getWidth()-62,ends[0][0])),bottom+16,'Labor '+api.value(2).toFixed(1)+'%','center','labor-result'),
   label(right[0]+(right[0]<api.getWidth()-130?8:-8),right[1], 'Coalition '+api.value(3).toFixed(1)+'%',right[0]<api.getWidth()-130?'left':'right','coalition-result'),
-  label(leftEnd[0]+(leftEnd[0]>110?-8:8),leftEnd[1], 'Other '+api.value(4).toFixed(1)+'%',leftEnd[0]>110?'right':'left','other-result')
+  label(Math.max(100,Math.min(api.getWidth()-100,leftEnd[0])),leftEnd[1]+16, 'Minor parties and Independents\\n'+api.value(4).toFixed(1)+'%','center','other-result')
  ];
  return {type:'group',children:[
   {type:'circle',name:api.value(6),shape:{cx:p[0],cy:p[1],r:r},style:{fill:color,opacity:.8},
@@ -96,13 +96,13 @@ def ternary_options(df, year):
  sub=df[df.election_year==year]
  for group,color in WINNER_COLORS.items():
   data=[]
-  for _,r in sub[sub.winner_group=={'Labor':'Labor','Liberal–National':'Coalition','Other':'Other'}[group]].iterrows():
+  for _,r in sub[sub.winner_group=={'Labor':'Labor','Liberal–National':'Coalition','Minor parties and Independents':'Other'}[group]].iterrows():
    vals=[float(r[x+'_pct']) for x in ['labor','coalition','other']]
    x,y=ternary_xy(*vals)
    quality='Source totals differ; shares normalised to candidate sum' if not bool(r.get('reconciles',True)) else ''
    data.append(dict(name=r.electorate,value=[x,y,*vals,quality,r.electorate,r.winner_party,r.winner]))
   series.append(dict(type='custom',name=group,coordinateSystem='none',renderItem=render,data=data,itemStyle=dict(color=color),emphasis=dict(focus='none'),z=3))
- return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left=8,top=6,textStyle=dict(color='#252b33',fontSize=19,fontWeight=500)),tooltip=dict(show=False),series=series)
+ return dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left='center',bottom=2,padding=0,textStyle=dict(color='#252b33',fontSize=19,fontWeight=500)),tooltip=dict(show=False),series=series)
 
 def windsock_rows(final,centres,focus,basis,half=False):
  d=final.merge(centres,on='electorate',how='inner',validate='many_to_one');tag='tpp' if basis=='Labor–Coalition 2PP' else 'tcp';g=focus.lower()
