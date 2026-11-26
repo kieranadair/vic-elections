@@ -10,3 +10,18 @@ venv/
 
 # Installed Streamlit skill points to this machine’s Python environment.
 .agents/skills/developing-with-streamlit
+
+# Research, development and generated artifacts are not deployment inputs.
+/research/
+/screenshots/
+/outputs/
+/capture*.py
+/prepare_data.py
+/test_*.py
+/requirements-dev.txt
+/*.xlsx
+/data/*.geojson
+/data/centroids.csv
+/data/chart_inputs.csv
+/data/final_counts.csv
+/data/rounds_2022.csv
