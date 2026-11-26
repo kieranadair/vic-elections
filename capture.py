@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse
 import math
 import pandas as pd
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url', default='http://127.0.0.1:8501')
@@ -17,7 +17,7 @@ with sync_playwright() as playwright:
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.goto(args.url, wait_until='networkidle')
     page.wait_for_timeout(3000)
-    assert page.locator('iframe').count() == 12
+    expect(page.locator('iframe')).to_have_count(12,timeout=30000)
     assert page.get_by_role('tab').count() == 0
     assert page.get_by_text('Windsock map', exact=True).count() == 0
     for width in [1440, 1366]:
@@ -80,7 +80,7 @@ with sync_playwright() as playwright:
     trend_box=canvas.bounding_box()
     track=(trend_box['width']-16)/3
     inset=max(24,(track-(380-164)/(math.sqrt(3)/2))/2)
-    page.mouse.move(trend_box['x']+trend_box['width']-inset-1,trend_box['y']+40+(trend_box['height']-84)*(1-seat.labor_pct/100))
+    page.mouse.move(trend_box['x']+trend_box['width']-inset-1,trend_box['y']+52+(trend_box['height']-96)*(1-seat.labor_pct/100))
     page.wait_for_timeout(400)
     assert page.get_by_text('Elected: Labor',exact=False).is_visible()
     assert page.get_by_text('Labor: 41%',exact=False).is_visible()

@@ -28,6 +28,11 @@ WINNER_COLORS = {'Labor': '#cc4359', 'Liberal–National': '#377db8', MINOR_LABE
 WINNER_KEYS = {'Labor': 'Labor', 'Liberal–National': 'Coalition', MINOR_LABEL: 'Other'}
 
 
+def chart_title(text):
+    """Shared header treatment for the historical charts and vote trend."""
+    return dict(text=text,left='center',top=4,padding=0,textStyle=dict(color='#252b33',fontSize=22,fontWeight=500,fontFamily='Georgia, serif'))
+
+
 def election_summary(df, year):
     """Statewide seat shares and vote-weighted first preferences, in legend order."""
     seats = df[df.election_year == year]
@@ -105,7 +110,7 @@ def ternary_options(df, year, highlight=None, summary_df=None, show_summary=True
             return {type:'group',children:children};
             }""".replace('GEOMETRY',TERNARY_GEOMETRY_JS).replace('ROW',str(index)).replace('PALETTE',repr(list(WINNER_COLORS.values()))).replace('\n',' ')).js_code
             series.append(dict(type='custom',name=name,coordinateSystem='none',renderItem=bar,data=[shares],silent=True,z=1,tooltip=dict(show=False)))
-    options = dict(backgroundColor='#ffffff',animation=False,title=dict(text=str(year),left='center',top=4,padding=0,textStyle=dict(color='#252b33',fontSize=22,fontWeight=500,fontFamily='Georgia, serif')),tooltip=dict(show=False),series=series)
+    options = dict(backgroundColor='#ffffff',animation=False,title=chart_title(str(year)),tooltip=dict(show=False),series=series)
     if highlight and not (sub.electorate == highlight).any():
         options['graphic'] = [dict(type='text',left='center',top=330,style=dict(text='No displayed result under this name',fill='#68727e',font='10px sans-serif'))]
     return options
@@ -185,9 +190,9 @@ def primary_trend_options(df, electorate=None):
     media.append(dict(option=dict(grid=dict(left=24,right=24))))
     return dict(
         animation=False,backgroundColor='#ffffff',textStyle=dict(fontFamily='Inter, sans-serif'),
-        title=dict(text=f'{electorate or "Victoria overall"} · first-preference vote, 1982–2022',left=48,top=4,padding=0,textAlign='left',textStyle=dict(color='#252b33',fontSize=14,fontWeight=500)),
+        title=chart_title(f'{electorate or "Victoria overall"} · first-preference vote, 1982–2022'),
         dataset=dict(source=primary_trend_data(df,electorate)),
-        grid=dict(left=24,right=24,top=40,bottom=24,containLabel=True),media=media,
+        grid=dict(left=24,right=24,top=52,bottom=24,containLabel=True),media=media,
         xAxis=dict(type='time',min='1982-01-01',max='2022-01-01',splitNumber=8,axisLabel=dict(formatter='{yyyy}',color='#51565e',showMinLabel=True,showMaxLabel=True,hideOverlap=True),axisLine=dict(lineStyle=dict(color='#c7cbd0')),axisTick=dict(show=False),splitLine=dict(show=False)),
         yAxis=dict(type='value',min=0,max=100,interval=20,axisLabel=dict(formatter='{value}%',color='#51565e'),axisLine=dict(show=False),axisTick=dict(show=False),splitLine=dict(lineStyle=dict(color='#e9ecef'))),
         tooltip=dict(trigger='axis',confine=True,formatter=tooltip,axisPointer=dict(type='line',lineStyle=dict(color='#aeb5bd',type='dashed'))),
